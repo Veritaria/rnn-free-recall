@@ -1,4 +1,6 @@
-# A neural network model of free recall learns multiple memory strategies
+# RNN free recall
+
+This is the code for the paper: [A neural network model of free recall learns multiple memory strategies](https://www.biorxiv.org/content/10.1101/2025.09.25.678592v1.abstract).
 
 ### Getting started
 Install required packages:
