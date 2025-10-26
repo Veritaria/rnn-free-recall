@@ -1,23 +1,28 @@
 # A neural network model of free recall learns multiple memory strategies
 
 ### Getting started
+Install required packages:
+```
+pip install -r requirements.txt
+```
+
 To run the model with the default setup:
 ```
 python -u main.py --exp Basic --setup setup.json
 ```
-Check results in /experiments/Basic/figures.
+Wait for the model to complete training and analysis, and check results in /experiments/Basic/figures.
 
 The model shall show the memory palace strategy in free recall.
 
-Check this setup file in /experiments/Basic/setups to understand the default training settings. You can then modify them according to your needs.
+Check the setup file in /experiments/Basic/setups to get the default training settings. You can then modify them according to your needs.
 
 Python files in /experiments/Basic include analyses of the model. The default analysis file is experiment.py. To change an analysis file to run, add a parameter --exp_file [Your_Exp_File] when running main.py.
 
 ### Guidance on replication
-- To run a number of models with different hyperparameters, run all setups in /experiments/VaryAllSeq8/setups
+- To run a number of models with different hyperparameters, run all setups in /experiments/VaryAllSeq8/setups. A total of 720 models will be trained, which can be modified in the setting files.
 - To replicate clustering results in the paper, check analysis_fr_paper.ipynb
 - To submit a number of jobs with slurm, check run.sh and run_cluster.py
-- To run TCM or the reservoir RNN, check /experiments/TCM or /experiments/Reservoir
+- To run TCM or the reservoir RNN, check /experiments/TCM and /experiments/Reservoir
 - To modify model structure, check /models/model/value_gru.py
 - To modify the task, check /tasks/FreeRecall.py
 
