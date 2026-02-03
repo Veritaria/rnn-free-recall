@@ -58,8 +58,8 @@ class ValueMemoryGRU(BasicModule):
 
         self.softmax_beta = softmax_beta        # 1/temperature for softmax function for computing final output decision
         if mem_beta_decay:
-            self.mem_beta = self.memory_module.similarity_measure.softmax_temperature
-            print("mem_beta initialized to {}".format(self.mem_beta))
+            self.mem_beta = torch.nn.Parameter(torch.tensor(self.memory_module.similarity_measure.softmax_temperature, dtype=torch.float32), requires_grad=False)
+            print("mem_beta initialized to {}".format(self.mem_beta.item()))
         else:
             self.mem_beta = None
         self.mem_beta_decay = mem_beta_decay
