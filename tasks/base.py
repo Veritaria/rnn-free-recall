@@ -20,6 +20,9 @@ class BaseEMTask(gym.Env):
 
                  one_hot_stimuli=True,              # whether to use one-hot encoding for the stimuli, otherwise use feature-wise encoding
                  one_hot_action=True,               # whether to use one-hot encoding for the action, otherwise use feature-wise encoding
+                 gaussian_stimuli=False,            # whether to use gaussian encoding for the stimuli, otherwise use one-hot encoding
+                 gaussian_stimuli_std=1.0,          # the standard deviation of the gaussian distribution, in case of "gaussian"
+                 gaussian_stimuli_sigma=0.2,        # the standard deviation of the generated gaussian distribution, in case of "gaussian"
 
                  include_extra_observation=False,   # whether to include the extra observation
                  extra_observation_type="noise",    # "noise", "gaussian", "gaussian_identity", "position", or "feature"
@@ -77,7 +80,11 @@ class BaseEMTask(gym.Env):
             self.extra_observation_dim = self.feature_dim ** self.num_features
 
         self.one_hot_stimuli = one_hot_stimuli
-        if self.one_hot_stimuli:
+        self.gaussian_stimuli = gaussian_stimuli
+        self.gaussian_stimuli_std = gaussian_stimuli_std
+        self.gaussian_stimuli_sigma = gaussian_stimuli_sigma
+        
+        if self.one_hot_stimuli or self.gaussian_stimuli:
             obs_space_dim = self.feature_dim ** self.num_features + self.extra_observation_dim + self.num_features + self.feature_dim + self.num_features
         else:
             obs_space_dim = self.num_features * self.feature_dim + self.extra_observation_dim + self.num_features + self.feature_dim + self.num_features
@@ -101,11 +108,16 @@ class BaseEMTask(gym.Env):
         self.action_space = spaces.MultiDiscrete(action_space_dim)
 
         if self.extra_observation_type == "gaussian" or self.extra_observation_type == "gaussian_identity":
-            self.gaussian_vecs = self._generate_gaussian_vecs()
+            self.gaussian_vecs = self._generate_gaussian_vecs(self.extra_observation_dim, self.extra_observation_std, self.extra_gaussian_sigma)
         else:
             self.gaussian_vecs = None
 
         self.all_stimuli = self._generate_all_stimuli()
+
+        if self.gaussian_stimuli:
+            self.gaussian_stimuli_vecs = self._generate_gaussian_vecs(self.vocabulary_size, self.gaussian_stimuli_std, self.gaussian_stimuli_sigma)
+        else:
+            self.gaussian_stimuli_vecs = None
 
 
     def reset(self, memory_sequence_index=None, **kwargs):
@@ -234,10 +246,13 @@ class BaseEMTask(gym.Env):
         generate the observation for the given stimulus
         """
         observation = np.zeros(self.obs_shape)
-        if self.one_hot_stimuli:
+        if self.one_hot_stimuli or self.gaussian_stimuli:
             if stimuli is not None:
                 stimuli_int = self._convert_item_to_int(stimuli.reshape(1, -1))
-                observation[stimuli_int] = 1
+                if self.gaussian_stimuli:
+                    observation[:self.vocabulary_size] = self.gaussian_stimuli_vecs[stimuli_int]
+                else:
+                    observation[stimuli_int] = 1
             question_offset = self.vocabulary_size
         else:
             if stimuli is not None:
@@ -255,14 +270,14 @@ class BaseEMTask(gym.Env):
         return observation
 
 
-    def _generate_gaussian_vecs(self):
+    def _generate_gaussian_vecs(self, dim, std, sigma):
         # Generate a Gaussian (Normal) PDF curve for N(0,1) with a dimension of self.extra_observation_dim
-        x = np.linspace(-3, 3, self.extra_observation_dim)
-        gaussian_vec = (1.0 / np.sqrt(2 * np.pi * self.extra_gaussian_sigma ** 2)) * np.exp(-0.5 * (x / self.extra_gaussian_sigma) ** 2)
-        gaussian_vec = (gaussian_vec - np.mean(gaussian_vec)) / np.std(gaussian_vec) * self.extra_observation_std
+        x = np.linspace(-3, 3, dim)
+        gaussian_vec = (1.0 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(-0.5 * (x / sigma) ** 2)
+        gaussian_vec = (gaussian_vec - np.mean(gaussian_vec)) / np.std(gaussian_vec) * std
         gaussian_vec = np.roll(gaussian_vec, -self.sequence_len//2)
         gaussian_vecs = [gaussian_vec]
-        for i in range(1, self.extra_observation_dim):
+        for i in range(1, dim):
             gaussian_vec = np.roll(gaussian_vec, 1)
             gaussian_vecs.append(gaussian_vec)
         gaussian_vecs = np.array(gaussian_vecs)
