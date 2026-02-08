@@ -44,7 +44,7 @@
         "mem_beta_decay": true,
         "mem_beta_decay_rate": 0.9,
         "mem_beta_min": 0.0005,
-        "init_state_type": "noise",
+        "init_state_type": "gaussian",
         "flush_noise": 1,
         "wm_noise_prop": 0.04,
         "subclasses": [{
@@ -81,9 +81,10 @@
             "wrong_reward": -0.75,
             "no_action_reward": -0.75,
             "include_extra_observation": true,
-            "extra_observation_type": "noise",
+            "extra_observation_type": "gaussian",
             "extra_observation_dim": 21,
-            "extra_observation_std": 1.0
+            "extra_observation_std": 0.5,
+            "extra_gaussian_sigma": 0.2
         }],
         "trainer": {
             "num_iter": 1e5,

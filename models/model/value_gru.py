@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn as nn
+from copy import deepcopy
 
 from ..utils import load_act_fn, softmax
 from ..base_module import BasicModule
@@ -179,8 +180,8 @@ class ValueMemoryGRU(BasicModule):
                 raise AttributeError("Invalid init_state_type, should be zeros, train or train_diff")
         
         if self.mem_beta_decay and decay_mem_beta and self.mem_beta > self.mem_beta_min:
-            self.mem_beta = self.mem_beta * self.mem_beta_decay_rate
-            print("mem_beta decayed to {}".format(self.mem_beta))
+            self.mem_beta = torch.nn.Parameter(self.mem_beta * self.mem_beta_decay_rate, requires_grad=False)
+            print("mem_beta decayed to {}".format(self.mem_beta.item()))
         
         self.write(state, 'init_state')
         return state
@@ -199,7 +200,7 @@ class ValueMemoryGRU(BasicModule):
         # retrieve memory
         if self.use_memory and self.retrieving:
             # mem_beta = self.mem_beta if mem_beta is None else mem_beta
-            retrieved_memory, memory_similarity = self.memory_module.retrieve(state, beta=self.mem_beta)
+            retrieved_memory, memory_similarity = self.memory_module.retrieve(state, beta=self.mem_beta.item())
             if self.em_gate_type == "constant":
                 mem_gate = self.em_gate
             elif self.em_gate_type == "scalar_sigmoid" or self.em_gate_type == "vector":

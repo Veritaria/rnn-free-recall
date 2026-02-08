@@ -83,7 +83,7 @@
             "include_extra_observation": true,
             "extra_observation_type": "noise",
             "extra_observation_dim": 21,
-            "extra_observation_std": 1.0
+            "extra_observation_std": 0.5
         }],
         "trainer": {
             "num_iter": 1e5,
