@@ -165,7 +165,7 @@ class ValueMemoryGRU(BasicModule):
             elif self.init_state_type == 'train_diff':
                 state = self.h0_recall.repeat(batch_size, 1)
             else:
-                raise AttributeError("Invalid init_state_type, should be zeros, train or train_diff")
+                raise AttributeError("Invalid init_state_type, should be zeros, noise, noise_all, noise_random, noise_random_all, random, train or train_diff")
             state = torch.tanh(state)
         else:
             # initialize hidden state for encoding phase
@@ -177,7 +177,7 @@ class ValueMemoryGRU(BasicModule):
                 self.random_init_state = torch.randn((batch_size, self.hidden_dim), device=self.device, requires_grad=True) * self.random_init_noise
                 state = self.random_init_state.clone()
             else:
-                raise AttributeError("Invalid init_state_type, should be zeros, train or train_diff")
+                raise AttributeError("Invalid init_state_type, should be zeros, noise, noise_all, noise_random, noise_random_all, random, train or train_diff")
         
         if self.mem_beta_decay and decay_mem_beta and self.mem_beta > self.mem_beta_min:
             self.mem_beta = torch.nn.Parameter(self.mem_beta * self.mem_beta_decay_rate, requires_grad=False)

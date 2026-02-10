@@ -44,7 +44,7 @@
         "mem_beta_decay": true,
         "mem_beta_decay_rate": 0.9,
         "mem_beta_min": 0.0005,
-        "init_state_type": "gaussian",
+        "init_state_type": "noise",
         "flush_noise": 1,
         "wm_noise_prop": 0.04,
         "subclasses": [{
