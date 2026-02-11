@@ -119,5 +119,5 @@
     }],
     "load_checkpoints": false,
     "load_saved_model": false,
-    "context_num": 5000
+    "context_num": 1000
 }

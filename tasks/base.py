@@ -154,6 +154,7 @@ class BaseEMTask(gym.Env):
                     "loss_mask": True, 
                     "correct": 0, "wrong": 0, "not_know": 0,
                     "done": False}
+                    # "reward": np.zeros(len(self.action_space.nvec))}
             if self.timestep >= self.sequence_len:
                 self.phase = "recall"
                 self.timestep = 0
@@ -172,7 +173,8 @@ class BaseEMTask(gym.Env):
                     "gt_mask": False,
                     "loss_mask": True,
                     "correct": 0, "wrong": 0, "not_know": 0,
-                    "done": False}
+                    "done": False,}
+                    # "reward": np.zeros(len(self.action_space.nvec))}
             
             # for different task
             # compute the reward and the ground truth
@@ -186,6 +188,12 @@ class BaseEMTask(gym.Env):
             # default ground truth is the memory sequence (same in free recall task)
             # different tasks have a different _compute_gt method
             info["gt"] = self._compute_gt()
+
+            # if isinstance(reward, float):
+            #     info["reward"][:] = reward
+            # else:
+            #     assert len(reward) == len(self.action_space.nvec)
+            #     info["reward"] = reward
 
             if self.timestep >= self.retrieve_time_limit:
                 info["done"] = True
@@ -220,6 +228,13 @@ class BaseEMTask(gym.Env):
     def compute_accuracy(self, actions):
         """
         given action sequence, compute the accuracy of current trial
+        """
+        raise NotImplementedError
+
+
+    def _compute_reward_and_metrics(self, action):
+        """
+        compute the reward and the metrics for the given action
         """
         raise NotImplementedError
     
@@ -399,16 +414,45 @@ class BaseEMTask(gym.Env):
                 item = action[:self.num_features]
         return item
 
+    
+    def _convert_action_to_extra_observation_data(self, action):
+        """
+        convert the action to the extra observation
+        """
+        assert self.requires_extra_action
+        if self.one_hot_action:
+            return action[1:]
+        else:
+            return action[self.num_features:]
+
 
     def _convert_action_to_observation(self, action):
         """
         convert the action to the observation
         """
         obs = np.zeros(self.action_shape)
+        offset = 0
+        action_offset = 0
         if self.one_hot_action:
             obs[int(action[0])] = 1
+            offset += self.vocabulary_size
+            action_offset += 1
         else:
             for i in range(self.num_features):
                 obs[i*self.feature_dim+action[i]] = 1
             obs[int(self.feature_dim*self.num_features+action[-1])] = 1
+            offset += self.feature_dim*self.num_features
+            action_offset += self.num_features
+        if self.requires_extra_action:
+            if self.extra_observation_type == "position":
+                for i in range(self.extra_position_dim):
+                    obs[offset+action[action_offset+i]] = 1
+                    offset += self.extra_observation_dim
+            elif self.extra_observation_type == "feature":
+                for i in range(self.num_features):
+                    obs[offset+self.extra_observation_data[action_offset, i]] = 1
+                    offset += self.feature_dim
+            elif self.extra_observation_type == "gaussian_identity" or self.extra_observation_type == "gaussian":
+                obs[offset:offset+self.extra_observation_dim] = self.gaussian_vecs[self.extra_observation_data[action_offset]]
+                offset += self.extra_observation_dim
         return obs

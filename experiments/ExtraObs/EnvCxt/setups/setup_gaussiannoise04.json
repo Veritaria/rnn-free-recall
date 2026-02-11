@@ -1,5 +1,5 @@
 {
-    "run_num": 10,
+    "run_num": 20,
     "model": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
@@ -81,11 +81,10 @@
             "wrong_reward": -0.75,
             "no_action_reward": -0.75,
             "include_extra_observation": true,
-            "extra_observation_type": "noise",
+            "extra_observation_type": "gaussian",
             "extra_observation_dim": 21,
-            "extra_observation_std": 1.0,
-            "include_extra_observation_during_recall": true,
-            "different_extra_observation_during_recall": true
+            "extra_observation_std": 0.4,
+            "extra_gaussian_sigma": 0.2
         }],
         "trainer": {
             "num_iter": 1e5,
@@ -125,5 +124,5 @@
     }],
     "load_checkpoints": false,
     "load_saved_model": false,
-    "context_num": 1000
+    "context_num": 5000
 }

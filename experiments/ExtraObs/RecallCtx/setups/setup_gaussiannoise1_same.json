@@ -81,11 +81,11 @@
             "wrong_reward": -0.75,
             "no_action_reward": -0.75,
             "include_extra_observation": true,
-            "extra_observation_type": "noise",
+            "extra_observation_type": "gaussian",
             "extra_observation_dim": 21,
             "extra_observation_std": 1.0,
             "include_extra_observation_during_recall": true,
-            "different_extra_observation_during_recall": true
+            "different_extra_observation_during_recall": false
         }],
         "trainer": {
             "num_iter": 1e5,

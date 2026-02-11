@@ -3,7 +3,7 @@
     "model": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
-        "input_dim": 205,
+        "input_dim": 165,
         "output_dims": [65],
         "use_memory": true,
         "softmax_beta": 1.0,
@@ -81,9 +81,11 @@
             "wrong_reward": -0.75,
             "no_action_reward": -0.75,
             "include_extra_observation": true,
-            "extra_observation_type": "noise",
-            "extra_observation_dim": 61,
-            "extra_observation_std": 1.0
+            "extra_observation_type": "gaussian",
+            "extra_observation_dim": 21,
+            "extra_observation_std": 1.0,
+            "include_extra_observation_during_recall": true,
+            "different_extra_observation_during_recall": true
         }],
         "trainer": {
             "num_iter": 1e5,
@@ -123,5 +125,5 @@
     }],
     "load_checkpoints": false,
     "load_saved_model": false,
-    "context_num": 5000
+    "context_num": 1000
 }
