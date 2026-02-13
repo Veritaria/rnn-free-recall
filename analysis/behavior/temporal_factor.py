@@ -30,7 +30,8 @@ class TemporalFactor:
                         # compute the rank number of all the possible transitions (the farer the transition is, the lower the rank is)
                         ranks = rankdata(-np.abs(possible_temporal_transitions))
                         # compute the rank of the actual transition / the largest rank
-                        self.results[i][t+1] = (ranks[actual_transition] - 1) / (len(ranks) - 1)
+                        value = (ranks[actual_transition] - 1) / (len(ranks) - 1)
+                        self.results[i][t+1] = value[0]
         return self.results
     
 
