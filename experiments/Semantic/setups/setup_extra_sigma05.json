@@ -83,7 +83,7 @@
             "include_extra_observation": true,
             "extra_observation_type": "gaussian_identity",
             "extra_observation_dim": 64,
-            "extra_observation_std": 1.0,
+            "extra_observation_std": 0.5,
             "extra_gaussian_sigma": 0.5
         }],
         "trainer": {
