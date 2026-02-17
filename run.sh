@@ -1,6 +1,8 @@
 gamma=('0' '02' '04' '06' '08' '10')
 noise=('0' '02' '04' '06' '08' '1')
 
+ctx_noise=('02' '04' '06' '08' '1')
+
 # for n in "${noise[@]}"
 # do
 #     for g in "${gamma[@]}"
@@ -10,6 +12,13 @@ noise=('0' '02' '04' '06' '08' '1')
 #     done
 # done
 
-python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 4 --setup setup_randnoise1.json --time 11 -train
+for n in "${ctx_noise[@]}"
+do
+    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 4 --setup setup_gaussiannoise${n}.json --time 11 --mem 16
+done
+
+python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 4 --setup setup_gaussiannoise${n}.json --time 11 --mem 16
+
+# python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 4 --setup setup_randnoise1.json --time 11 -train
 
 # squeue --me --format="%.18i %.9P %.80j %.8u %.2t %.10M %.6D %R"
