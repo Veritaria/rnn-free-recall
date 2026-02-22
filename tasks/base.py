@@ -3,6 +3,8 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 
+from .utils import hierarchical_binary_patterns
+
 
 class BaseEMTask(gym.Env):
     def __init__(self,
@@ -25,7 +27,7 @@ class BaseEMTask(gym.Env):
                  gaussian_stimuli_sigma=0.2,        # the standard deviation of the generated gaussian distribution, in case of "gaussian"
 
                  include_extra_observation=False,   # whether to include the extra observation
-                 extra_observation_type="noise",    # "noise", "gaussian", "gaussian_identity", "position", or "feature"
+                 extra_observation_type="noise",    # "noise", "gaussian", "gaussian_identity", "position", "hierarchical_binary", or "feature"
                                                         # noise: noise drawn from a normal distribution, gradually drifting
                                                         # gaussian: a gaussian distribution converted from a random one-hot vector, gradually drifting
                                                         # gaussian_identity: a gaussian distribution contverted from item identity
@@ -118,6 +120,10 @@ class BaseEMTask(gym.Env):
             self.gaussian_stimuli_vecs = self._generate_gaussian_vecs(self.vocabulary_size, self.gaussian_stimuli_std, self.gaussian_stimuli_sigma)
         else:
             self.gaussian_stimuli_vecs = None
+        
+        if self.extra_observation_type == "hierarchical_binary":
+            self.hierarchical_binary_relation_matrix, self.hierarchical_binary_data \
+                 = hierarchical_binary_patterns(self.extra_observation_dim)  # the other params are default and is only compatible with 64 items, may change in the future
 
 
     def reset(self, memory_sequence_index=None, **kwargs):
@@ -287,7 +293,7 @@ class BaseEMTask(gym.Env):
 
     def _generate_gaussian_vecs(self, dim, std, sigma):
         # Generate a Gaussian (Normal) PDF curve for N(0,1) with a dimension of self.extra_observation_dim
-        x = np.linspace(-3, 3, dim)
+        x = np.linspace(-3, 3+6/(dim-2)*((int(dim)+1) % 2), dim)
         gaussian_vec = (1.0 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(-0.5 * (x / sigma) ** 2)
         gaussian_vec = (gaussian_vec - np.mean(gaussian_vec)) / np.std(gaussian_vec) * std
         gaussian_vec = np.roll(gaussian_vec, -self.sequence_len//2)
@@ -344,6 +350,9 @@ class BaseEMTask(gym.Env):
                     extra_observation_sequence[i, offset+self.memory_sequence[i, j]] = 1
                     offset += self.feature_dim
             extra_observation_data = self.memory_sequence
+        elif self.extra_observation_type == "hierarchical_binary":
+            extra_observation_sequence = self.hierarchical_binary_data[self.memory_sequence_int] * self.extra_observation_dim
+            extra_observation_data = self.memory_sequence_int
         else:
             raise ValueError(f"Invalid extra observation type: {self.extra_observation_type}")
 

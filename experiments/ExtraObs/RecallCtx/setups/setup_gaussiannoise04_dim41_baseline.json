@@ -1,9 +1,9 @@
 {
-    "run_num": 20,
+    "run_num": 10,
     "model": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
-        "input_dim": 165,
+        "input_dim": 185,
         "output_dims": [65],
         "use_memory": true,
         "softmax_beta": 1.0,
@@ -35,7 +35,7 @@
     "model_for_record": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
-        "input_dim": 165,
+        "input_dim": 185,
         "output_dims": [65],
         "use_memory": true,
         "softmax_beta": 1.0,
@@ -81,11 +81,10 @@
             "wrong_reward": -0.75,
             "no_action_reward": -0.75,
             "include_extra_observation": true,
-            "extra_observation_type": "noise",
-            "extra_observation_dim": 21,
-            "extra_observation_std": 1.0,
-            "include_extra_observation_during_recall": true,
-            "different_extra_observation_during_recall": true
+            "extra_observation_type": "gaussian",
+            "extra_observation_dim": 41,
+            "extra_observation_std": 0.4,
+            "include_extra_observation_during_recall": false
         }],
         "trainer": {
             "num_iter": 1e5,

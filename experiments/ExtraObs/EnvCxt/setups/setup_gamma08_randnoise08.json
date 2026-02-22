@@ -83,9 +83,7 @@
             "include_extra_observation": true,
             "extra_observation_type": "noise",
             "extra_observation_dim": 21,
-            "extra_observation_std": 1.0,
-            "include_extra_observation_during_recall": true,
-            "different_extra_observation_during_recall": true
+            "extra_observation_std": 0.8
         }],
         "trainer": {
             "num_iter": 1e5,
@@ -101,7 +99,7 @@
                         "class": "A2CLoss",
                         "use_V": true,
                         "eta": 0.02,
-                        "gamma": 0.999
+                        "gamma": 0.8
                     }
                 ]
             },
@@ -125,5 +123,5 @@
     }],
     "load_checkpoints": false,
     "load_saved_model": false,
-    "context_num": 1000
+    "context_num": 5000
 }
