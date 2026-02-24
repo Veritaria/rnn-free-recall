@@ -229,7 +229,8 @@ class BaseEMTask(gym.Env):
             "condition_feature": self.condition_feature,
             "condition_value": self.condition_value,
             "memory_sequence_int": self.memory_sequence_int + 1,
-            "extra_observation": self.extra_observation_data
+            "extra_observation_info": self.extra_observation_data,
+            "extra_observation_stimuli": self.extra_observation_sequence
         }
     
 

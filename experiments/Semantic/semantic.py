@@ -3,6 +3,7 @@ import os
 import numpy as np
 import sklearn.metrics.pairwise as skp
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 
 from analysis.behavior import SemanticContiguity
 from utils import savefig
@@ -67,38 +68,35 @@ def run(data_all, model_all, env, paths, exp_name, **kwargs):
         memory_contexts = memory_contexts.reshape(-1, memory_contexts.shape[-1])    # reshape to (trials, sequence_len)
         print("memory_contexts shape: ", memory_contexts.shape)
 
-        memory_contexts_features = []
-        for i in range(all_context_num):
-            memory_contexts_features.append(data['trial_data'][i]["memory_sequence"])
-        memory_contexts_features = np.array(memory_contexts_features)
-        print("memory_contexts_features shape: ", memory_contexts_features.shape)
-        # Create permuted version of memory contexts by independently shuffling each trial's sequence
-        memory_contexts_features_permuted = memory_contexts_features.copy()
-        # for i in range(memory_contexts_features.shape[0]):
-        #     perm = np.random.permutation(memory_contexts_features.shape[1])
-        #     memory_contexts_features_permuted[i] = memory_contexts_features[i][perm]
 
-        print(actions[:, :, :env.unwrapped.num_features].shape, memory_contexts_features_permuted.shape)
-        print(actions[0, timestep_each_phase:, :env.unwrapped.num_features])
-        print(memory_contexts_features_permuted[0])
+        if env.unwrapped.extra_observation_type == "hierarchical_binary":
+            semantic_stimuli = env.unwrapped.hierarchical_binary_data
+        elif env.unwrapped.extra_observation_type == "gaussian_identity":
+            semantic_stimuli = env.unwrapped.gaussian_vecs
+        else:
+            raise ValueError(f"Invalid extra observation type for this analysis: {env.unwrapped.extra_observation_type}")
+
+        similarity_matrix = skp.cosine_similarity(semantic_stimuli)
+
+        plt.figure(figsize=(4.5, 3.7), dpi=180)
+        norm = colors.TwoSlopeNorm(vmin=-1, vcenter=0., vmax=1) 
+
+        plt.imshow(similarity_matrix, cmap="RdYlBu_r", norm=norm)
+        plt.colorbar(label="cosine similarity")
+        plt.xlabel("semantic stimulus")
+        plt.ylabel("semantic stimulus")
+        plt.tight_layout()
+        savefig(fig_path, "semantic_stimuli_similarity")
+
 
         semantic_contiguity = SemanticContiguity()
-        results = semantic_contiguity.fit(actions[:, timestep_each_phase:, :env.unwrapped.num_features], env.unwrapped.feature_dim)
-        semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity_normalized", use_normalized=True, title="semantic contiguity", format="png")
-        semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity", use_normalized=False, title="semantic contiguity", format="png")
+        results, results_baseline = semantic_contiguity.fit(actions[:, timestep_each_phase:], similarity_matrix)
+        semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity_normalized", use_normalized=True, )
+        semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity", use_normalized=False, )
 
-        results_gt = semantic_contiguity.fit(memory_contexts_features_permuted, env.unwrapped.feature_dim)
-        semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity_gt_normalized", use_normalized=True, title="semantic contiguity", format="png")
-        semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity_gt", use_normalized=False, title="semantic contiguity", format="png")
-
-        print(results, results_gt)
-        # results_gt[results_gt == 0] = 1
-        semantic_contiguity.results = results / results_gt
-        semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity_norm_ratio", use_normalized=False, title="semantic contiguity", format="png")
 
         os.makedirs(fig_path/"data", exist_ok=True)
         np.save(fig_path/"data"/"semantic_contiguity_results.npy", results)
-        np.save(fig_path/"data"/"semantic_contiguity_results_gt.npy", results_gt)
-        np.save(fig_path/"data"/"semantic_contiguity_norm_ratio.npy", semantic_contiguity.results)
+        np.save(fig_path/"data"/"semantic_contiguity_baseline.npy", results_baseline)
 
 
