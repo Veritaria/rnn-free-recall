@@ -2,6 +2,7 @@ import numpy as np
 import random
 from copy import deepcopy
 
+
 def hierarchical_binary_patterns(dim=64, n1=4, n2=4, n3=4, p1=.1, p2=.1):
     n = n1 * n2 * n3
     relation_matrix = create_block_matrix(n, n1) + create_block_matrix(n, n1*n2) + np.eye(n)
