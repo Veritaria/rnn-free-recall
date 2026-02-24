@@ -122,8 +122,10 @@ class BaseEMTask(gym.Env):
             self.gaussian_stimuli_vecs = None
         
         if self.extra_observation_type == "hierarchical_binary":
-            self.hierarchical_binary_relation_matrix, self.hierarchical_binary_data \
-                 = hierarchical_binary_patterns(self.extra_observation_dim)  # the other params are default and is only compatible with 64 items, may change in the future
+            self.hierarchical_binary_data = np.load("./data/hierarchical_binary_patterns.npy")
+            # self.hierarchical_binary_relation_matrix, self.hierarchical_binary_data \
+            #      = hierarchical_binary_patterns(self.extra_observation_dim)  # the other params are default and is only compatible with 64 items, may change in the future
+
 
 
     def reset(self, memory_sequence_index=None, **kwargs):
