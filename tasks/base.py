@@ -351,7 +351,7 @@ class BaseEMTask(gym.Env):
                     offset += self.feature_dim
             extra_observation_data = self.memory_sequence
         elif self.extra_observation_type == "hierarchical_binary":
-            extra_observation_sequence = self.hierarchical_binary_data[self.memory_sequence_int] * self.extra_observation_dim
+            extra_observation_sequence = self.hierarchical_binary_data[self.memory_sequence_int] * self.extra_observation_std
             extra_observation_data = self.memory_sequence_int
         else:
             raise ValueError(f"Invalid extra observation type: {self.extra_observation_type}")

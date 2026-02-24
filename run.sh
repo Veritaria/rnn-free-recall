@@ -15,8 +15,8 @@ ctx_noise=('0' '04' '08' '12')
 
 for n in "${ctx_noise[@]}"
 do
-    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma08_randnoise${n}.json --time 10 --mem 16 -train
-    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma08_gaussiannoise${n}.json --time 10 --mem 16 -train
+    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma06_randnoise${n}.json --time 10 --mem 16 -train
+    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma06_gaussiannoise${n}.json --time 10 --mem 16 -train
 done
 
 # python run_cluster.py --exp ExtraObs.RecallCtx --cpus_per_task 1 --setup setup_gaussiannoise1_same.json --time 1 --mem 16
