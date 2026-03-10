@@ -27,7 +27,7 @@ class BaseEMTask(gym.Env):
                  gaussian_stimuli_sigma=0.2,        # the standard deviation of the generated gaussian distribution, in case of "gaussian"
 
                  include_extra_observation=False,   # whether to include the extra observation
-                 extra_observation_type="noise",    # "noise", "gaussian", "gaussian_identity", "position", "hierarchical_binary", or "feature"
+                 extra_observation_type="noise",    # "noise", "gaussian", "gaussian_identity", "position", "hierarchical_binary". "rumelhart", or "feature"
                                                         # noise: noise drawn from a normal distribution, gradually drifting
                                                         # gaussian: a gaussian distribution converted from a random one-hot vector, gradually drifting
                                                         # gaussian_identity: a gaussian distribution contverted from item identity
@@ -39,8 +39,9 @@ class BaseEMTask(gym.Env):
                  extra_position_dim=2,              # the dimension of the position in the map, in case of "position", 
                                                         # total dim is extra_position_dim * extra_observation_dim
                  requires_extra_action=False,
-                 include_extra_observation_during_recall=False,        # whether to include the extra observation during recall phase
+                 include_extra_observation_during_recall=False,         # whether to include the extra observation during recall phase
                  different_extra_observation_during_recall=False,       # whether to use different extra observation during recall phase
+                 continuous_extra_observation_during_recall=False,      # whether to use continuous extra observation from encoding phase during recall phase
 
                  seed=None,
                  **kwargs):
@@ -69,6 +70,8 @@ class BaseEMTask(gym.Env):
         self.requires_extra_action = requires_extra_action
         self.include_extra_observation_during_recall = include_extra_observation_during_recall
         self.different_extra_observation_during_recall = different_extra_observation_during_recall
+        self.continuous_extra_observation_during_recall = continuous_extra_observation_during_recall
+
         if requires_extra_action:
             assert not extra_observation_type == "noise", "requires_extra_action is not supported for noise type"
         self.extra_observation_dim = extra_observation_dim
@@ -125,6 +128,8 @@ class BaseEMTask(gym.Env):
             self.hierarchical_binary_data = np.load("./data/hierarchical_binary_patterns.npy")
             # self.hierarchical_binary_relation_matrix, self.hierarchical_binary_data \
             #      = hierarchical_binary_patterns(self.extra_observation_dim)  # the other params are default and is only compatible with 64 items, may change in the future
+        elif self.extra_observation_type == "rumelhart":
+            self.rumelhart_data = np.load("./data/rumelhart_semantic_data.npy")
 
 
 
@@ -308,25 +313,38 @@ class BaseEMTask(gym.Env):
         return gaussian_vecs
 
 
-    def _generate_extra_observation_sequence_for_single_phase(self):
+    def _generate_extra_observation_sequence_for_single_phase(self, len=None, prev_data=None):
         """
         generate the extra observation sequence for a single phase (encoding or recall)
         """
-        extra_observation_sequence = np.zeros((self.sequence_len, self.extra_observation_dim))
+        len = self.sequence_len if len is None else len
+        extra_observation_sequence = np.zeros((len, self.extra_observation_dim))
         if self.extra_observation_type == "noise":
             noise_vec = np.random.randn(self.extra_observation_dim)
             noise_vec = (noise_vec - np.mean(noise_vec)) / np.std(noise_vec) * self.extra_observation_std
             extra_observation_sequence[0] = noise_vec
-            for i in range(1, self.sequence_len):
+            for i in range(1, len):
                 noise_vec = noise_vec + np.random.randn(self.extra_observation_dim)
                 noise_vec = (noise_vec - np.mean(noise_vec)) / np.std(noise_vec) * self.extra_observation_std
                 extra_observation_sequence[i] = noise_vec
             extra_observation_data = extra_observation_sequence
         elif self.extra_observation_type == "gaussian":
-            rand_start_index = np.random.choice(self.extra_observation_dim - self.sequence_len, 1, replace=False)[0]
-            extra_observation_sequence[:] = self.gaussian_vecs[rand_start_index:rand_start_index+self.sequence_len]
-            extra_observation_data = np.arange(rand_start_index, rand_start_index+self.sequence_len)
+            if prev_data is not None:
+                # make the sequence more different from the previous sequence
+                prev_index = prev_data[0]
+                choice_range = np.arange(0, self.extra_observation_dim)
+                exclude = np.arange(prev_index-5, prev_index + len+5) % self.extra_observation_dim
+                choice_range = np.setdiff1d(choice_range, exclude)
+                rand_start_index = np.random.choice(choice_range, 1, replace=False)[0]
+            else:
+                rand_start_index = np.random.choice(self.extra_observation_dim, 1, replace=False)[0]
+            if rand_start_index + len > self.extra_observation_dim:
+                extra_observation_sequence[:] = np.concatenate([self.gaussian_vecs[rand_start_index:], self.gaussian_vecs[:len-(self.extra_observation_dim-rand_start_index)]])
+            else:
+                extra_observation_sequence[:] = self.gaussian_vecs[rand_start_index:rand_start_index+len]
+            extra_observation_data = np.arange(rand_start_index, rand_start_index+len)
         elif self.extra_observation_type == "gaussian_identity":
+            assert len == self.sequence_len
             extra_observation_sequence = self.gaussian_vecs[self.memory_sequence_int]
             extra_observation_data = self.memory_sequence_int
         elif self.extra_observation_type == "position":
@@ -337,7 +355,7 @@ class BaseEMTask(gym.Env):
                 extra_observation_sequence[0, offset+position[i]] = 1
                 offset += each_position_dim
             positions = [position]
-            for i in range(1, self.sequence_len):
+            for i in range(1, len):
                 changed_position = np.random.choice(self.extra_position_dim, 1, replace=True)
                 position[changed_position] = (position[changed_position] + np.random.choice([-1, 1], 1, replace=True)) % each_position_dim
                 offset = 0
@@ -347,6 +365,7 @@ class BaseEMTask(gym.Env):
                 positions.append(position)
             extra_observation_data = positions
         elif self.extra_observation_type == "feature":
+            assert len == self.sequence_len
             for i in range(self.sequence_len):
                 offset = 0
                 for j in range(self.num_features):
@@ -354,7 +373,12 @@ class BaseEMTask(gym.Env):
                     offset += self.feature_dim
             extra_observation_data = self.memory_sequence
         elif self.extra_observation_type == "hierarchical_binary":
+            assert len == self.sequence_len
             extra_observation_sequence = self.hierarchical_binary_data[self.memory_sequence_int] * self.extra_observation_std
+            extra_observation_data = self.memory_sequence_int
+        elif self.extra_observation_type == "rumelhart":
+            assert len == self.sequence_len
+            extra_observation_sequence = self.rumelhart_data[self.memory_sequence_int] * self.extra_observation_std
             extra_observation_data = self.memory_sequence_int
         else:
             raise ValueError(f"Invalid extra observation type: {self.extra_observation_type}")
@@ -367,10 +391,14 @@ class BaseEMTask(gym.Env):
         generate the extra observation sequence for the current trial
         """
         extra_observation_sequence = np.zeros((self.sequence_len * 2, self.extra_observation_dim))
-        extra_observation_sequence[:self.sequence_len], extra_observation_data = self._generate_extra_observation_sequence_for_single_phase()
-        if self.include_extra_observation_during_recall:
+        if self.continuous_extra_observation_during_recall:
+            len = self.sequence_len * 2
+        else:
+            len = self.sequence_len
+        extra_observation_sequence[:len], extra_observation_data = self._generate_extra_observation_sequence_for_single_phase(len)
+        if (not self.continuous_extra_observation_during_recall) and self.include_extra_observation_during_recall:
             if self.different_extra_observation_during_recall:
-                extra_observation_sequence[self.sequence_len:], extra_observation_data2 = self._generate_extra_observation_sequence_for_single_phase()
+                extra_observation_sequence[self.sequence_len:], extra_observation_data2 = self._generate_extra_observation_sequence_for_single_phase(prev_data = extra_observation_data)
                 extra_observation_data = np.concatenate([extra_observation_data, extra_observation_data2])
             else:
                 extra_observation_sequence[self.sequence_len:] = extra_observation_sequence[:self.sequence_len]

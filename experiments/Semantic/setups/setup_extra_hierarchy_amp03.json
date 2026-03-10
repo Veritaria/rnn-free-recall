@@ -83,7 +83,7 @@
             "include_extra_observation": true,
             "extra_observation_type": "hierarchical_binary",
             "extra_observation_dim": 64,
-            "extra_observation_std": 0.5
+            "extra_observation_std": 0.3
         }],
         "trainer": {
             "num_iter": 2e5,

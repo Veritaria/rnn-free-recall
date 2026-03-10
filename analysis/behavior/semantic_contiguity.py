@@ -10,7 +10,7 @@ class SemanticContiguity:
         self.results = None
         self.results_all_time = None
 
-    def fit(self, actions, similarity_matrix, action_value_max=64, bin_num=10):
+    def fit(self, actions, similarity_matrix, action_value_max=64, bins=10):
         context_num = actions.shape[0]
         memory_num = actions.shape[1]
         
@@ -23,7 +23,10 @@ class SemanticContiguity:
                 similarities_for_nearby_recall.append(similarity)
         similarity_min = np.min(similarities_for_nearby_recall)
         similarity_max = np.max(similarities_for_nearby_recall)
-        self.similarity_bins = np.linspace(similarity_min, similarity_max, bin_num+1)
+        if isinstance(bins, int):
+            self.similarity_bins = np.linspace(similarity_min, similarity_max, bins+1)
+        else:
+            self.similarity_bins = bins
         print(len(self.similarity_bins))
         self.results, edges = np.histogram(similarities_for_nearby_recall, bins=self.similarity_bins)
         print(self.results)

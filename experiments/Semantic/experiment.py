@@ -562,3 +562,36 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
 
 
 
+        """ semantic contiguity """
+        if env.unwrapped.extra_observation_type == "hierarchical_binary":
+            semantic_stimuli = env.unwrapped.hierarchical_binary_data
+        elif env.unwrapped.extra_observation_type == "gaussian_identity":
+            semantic_stimuli = env.unwrapped.gaussian_vecs
+        else:
+            raise ValueError(f"Invalid extra observation type for this analysis: {env.unwrapped.extra_observation_type}")
+
+        similarity_matrix = skp.cosine_similarity(semantic_stimuli)
+
+        plt.figure(figsize=(4.5, 3.7), dpi=180)
+        norm = colors.TwoSlopeNorm(vmin=-1, vcenter=0., vmax=1) 
+
+        plt.imshow(similarity_matrix, cmap="RdYlBu_r", norm=norm)
+        plt.colorbar(label="cosine similarity")
+        plt.xlabel("semantic stimulus")
+        plt.ylabel("semantic stimulus")
+        plt.tight_layout()
+        savefig(fig_path, "semantic_stimuli_similarity")
+
+
+        semantic_contiguity = SemanticContiguity()
+        results, results_baseline = semantic_contiguity.fit(actions[:, timestep_each_phase:], similarity_matrix, bin_num=3)
+        semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity_normalized", use_normalized=True, )
+        semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity", use_normalized=False, )
+
+
+        os.makedirs(fig_path/"data", exist_ok=True)
+        np.save(fig_path/"data"/"semantic_contiguity_results.npy", results)
+        np.save(fig_path/"data"/"semantic_contiguity_baseline.npy", results_baseline)
+
+
+

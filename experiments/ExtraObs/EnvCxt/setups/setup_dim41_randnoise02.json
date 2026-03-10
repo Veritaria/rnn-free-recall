@@ -3,7 +3,7 @@
     "model": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
-        "input_dim": 165,
+        "input_dim": 185,
         "output_dims": [65],
         "use_memory": true,
         "softmax_beta": 1.0,
@@ -13,7 +13,7 @@
         "mem_beta_decay_rate": 0.9,
         "mem_beta_min": 0.0005,
         "init_state_type": "noise",
-        "flush_noise": 1,
+        "flush_noise": 0.9,
         "wm_noise_prop": 0.04,
         "subclasses": [{
             "name": "memory_module",
@@ -35,7 +35,7 @@
     "model_for_record": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
-        "input_dim": 165,
+        "input_dim": 185,
         "output_dims": [65],
         "use_memory": true,
         "softmax_beta": 1.0,
@@ -45,7 +45,7 @@
         "mem_beta_decay_rate": 0.9,
         "mem_beta_min": 0.0005,
         "init_state_type": "noise",
-        "flush_noise": 1,
+        "flush_noise": 0.9,
         "wm_noise_prop": 0.04,
         "subclasses": [{
             "name": "memory_module",
@@ -82,8 +82,8 @@
             "no_action_reward": -0.75,
             "include_extra_observation": true,
             "extra_observation_type": "noise",
-            "extra_observation_dim": 21,
-            "extra_observation_std": 1.2
+            "extra_observation_dim": 41,
+            "extra_observation_std": 0.2
         }],
         "trainer": {
             "num_iter": 1e5,
@@ -99,7 +99,7 @@
                         "class": "A2CLoss",
                         "use_V": true,
                         "eta": 0.02,
-                        "gamma": 0.6
+                        "gamma": 0.9
                     }
                 ]
             },

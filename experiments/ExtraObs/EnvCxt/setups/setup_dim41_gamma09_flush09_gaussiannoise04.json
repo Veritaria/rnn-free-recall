@@ -3,17 +3,17 @@
     "model": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
-        "input_dim": 208,
+        "input_dim": 185,
         "output_dims": [65],
         "use_memory": true,
         "softmax_beta": 1.0,
         "evolve_state_between_phases": true,
         "em_gate_type": "constant",
         "mem_beta_decay": true,
-        "mem_beta_decay_rate": 0.95,
-        "mem_beta_min": 0.0002,
+        "mem_beta_decay_rate": 0.9,
+        "mem_beta_min": 0.0005,
         "init_state_type": "noise",
-        "flush_noise": 1,
+        "flush_noise": 0.9,
         "wm_noise_prop": 0.04,
         "subclasses": [{
             "name": "memory_module",
@@ -35,7 +35,7 @@
     "model_for_record": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
-        "input_dim": 208,
+        "input_dim": 185,
         "output_dims": [65],
         "use_memory": true,
         "softmax_beta": 1.0,
@@ -45,7 +45,7 @@
         "mem_beta_decay_rate": 0.9,
         "mem_beta_min": 0.0005,
         "init_state_type": "noise",
-        "flush_noise": 1,
+        "flush_noise": 0.9,
         "wm_noise_prop": 0.04,
         "subclasses": [{
             "name": "memory_module",
@@ -81,17 +81,18 @@
             "wrong_reward": -0.75,
             "no_action_reward": -0.75,
             "include_extra_observation": true,
-            "extra_observation_type": "hierarchical_binary",
-            "extra_observation_dim": 64,
-            "extra_observation_std": 0.5
+            "extra_observation_type": "gaussian",
+            "extra_observation_dim": 41,
+            "extra_observation_std": 0.4,
+            "include_extra_observation_during_recall": false
         }],
         "trainer": {
-            "num_iter": 2e5,
+            "num_iter": 1e5,
             "test_iter": 500,
             "save_iter": 5000,
             "use_memory": true,
             "stop_test_accu": 0.99,
-            "mem_beta_decay_iter": 2000,
+            "mem_beta_decay_iter": 3000,
             "criterion": {
                 "class": "MultiRLLoss",
                 "criteria": [
@@ -99,7 +100,7 @@
                         "class": "A2CLoss",
                         "use_V": true,
                         "eta": 0.02,
-                        "gamma": 0.999
+                        "gamma": 0.9
                     }
                 ]
             },
@@ -123,5 +124,5 @@
     }],
     "load_checkpoints": false,
     "load_saved_model": false,
-    "context_num": 5000
+    "context_num": 1000
 }

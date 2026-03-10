@@ -1,5 +1,5 @@
 {
-    "run_num": 10,
+    "run_num": 20,
     "model": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,

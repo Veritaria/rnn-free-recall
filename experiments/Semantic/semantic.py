@@ -69,10 +69,18 @@ def run(data_all, model_all, env, paths, exp_name, **kwargs):
         print("memory_contexts shape: ", memory_contexts.shape)
 
 
+        # # bins = np.array([0.23, 0.69, 0.89, 1.0])
+        # bins = np.array([-0.01, 0.33, 0.67, 1.01])
+
         if env.unwrapped.extra_observation_type == "hierarchical_binary":
             semantic_stimuli = env.unwrapped.hierarchical_binary_data
+            bins = np.array([-0.01, 0.33, 0.67, 1.01])
         elif env.unwrapped.extra_observation_type == "gaussian_identity":
             semantic_stimuli = env.unwrapped.gaussian_vecs
+            bins = 10
+        elif env.unwrapped.extra_observation_type == "rumelhart":
+            semantic_stimuli = env.unwrapped.rumelhart_data
+            bins = np.array([-0.01, 0.33, 0.67, 1.01])
         else:
             raise ValueError(f"Invalid extra observation type for this analysis: {env.unwrapped.extra_observation_type}")
 
@@ -90,7 +98,7 @@ def run(data_all, model_all, env, paths, exp_name, **kwargs):
 
 
         semantic_contiguity = SemanticContiguity()
-        results, results_baseline = semantic_contiguity.fit(actions[:, timestep_each_phase:], similarity_matrix)
+        results, results_baseline = semantic_contiguity.fit(actions[:, timestep_each_phase:], similarity_matrix, bins=bins)
         semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity_normalized", use_normalized=True, )
         semantic_contiguity.visualize(fig_path, save_name="semantic_contiguity", use_normalized=False, )
 

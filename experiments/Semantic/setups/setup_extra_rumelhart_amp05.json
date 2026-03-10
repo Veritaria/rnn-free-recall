@@ -3,7 +3,7 @@
     "model": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
-        "input_dim": 208,
+        "input_dim": 164,
         "output_dims": [65],
         "use_memory": true,
         "softmax_beta": 1.0,
@@ -35,7 +35,7 @@
     "model_for_record": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
-        "input_dim": 208,
+        "input_dim": 164,
         "output_dims": [65],
         "use_memory": true,
         "softmax_beta": 1.0,
@@ -81,8 +81,8 @@
             "wrong_reward": -0.75,
             "no_action_reward": -0.75,
             "include_extra_observation": true,
-            "extra_observation_type": "hierarchical_binary",
-            "extra_observation_dim": 64,
+            "extra_observation_type": "rumelhart",
+            "extra_observation_dim": 20,
             "extra_observation_std": 0.5
         }],
         "trainer": {

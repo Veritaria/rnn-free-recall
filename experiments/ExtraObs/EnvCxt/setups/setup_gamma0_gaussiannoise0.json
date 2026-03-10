@@ -2,7 +2,7 @@
     "run_num": 20,
     "model": {
         "class": "ValueMemoryGRU",
-        "hidden_dim": 128,
+        "hidden_dim": 256,
         "input_dim": 165,
         "output_dims": [65],
         "use_memory": true,
@@ -18,7 +18,7 @@
         "subclasses": [{
             "name": "memory_module",
             "class": "ValueMemory",
-            "value_dim": 128,
+            "value_dim": 256,
             "capacity": 8,
             "recall_method": "weight_sum",
             "remove_retrieved": false,
@@ -34,7 +34,7 @@
     },
     "model_for_record": {
         "class": "ValueMemoryGRU",
-        "hidden_dim": 128,
+        "hidden_dim": 256,
         "input_dim": 165,
         "output_dims": [65],
         "use_memory": true,
@@ -50,7 +50,7 @@
         "subclasses": [{
             "name": "memory_module",
             "class": "ValueMemory",
-            "value_dim": 128,
+            "value_dim": 256,
             "capacity": 8,
             "recall_method": "argmax",
             "remove_retrieved": false,
@@ -83,7 +83,7 @@
             "include_extra_observation": true,
             "extra_observation_type": "gaussian",
             "extra_observation_dim": 21,
-            "extra_observation_std": 0.8,
+            "extra_observation_std": 0.0,
             "extra_gaussian_sigma": 0.2
         }],
         "trainer": {
@@ -100,7 +100,7 @@
                         "class": "A2CLoss",
                         "use_V": true,
                         "eta": 0.02,
-                        "gamma": 0.6
+                        "gamma": 0.0
                     }
                 ]
             },
