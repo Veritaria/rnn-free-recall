@@ -200,7 +200,7 @@ class ValueMemoryGRU(BasicModule):
         # retrieve memory
         if self.use_memory and self.retrieving:
             # mem_beta = self.mem_beta if mem_beta is None else mem_beta
-            retrieved_memory, memory_similarity = self.memory_module.retrieve(state, beta=self.mem_beta.item())
+            retrieved_memory, memory_similarity = self.memory_module.retrieve(state, beta=self.mem_beta.item() if self.mem_beta is not None else None)
             if self.em_gate_type == "constant":
                 mem_gate = self.em_gate
             elif self.em_gate_type == "scalar_sigmoid" or self.em_gate_type == "vector":

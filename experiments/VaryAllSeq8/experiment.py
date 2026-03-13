@@ -11,7 +11,7 @@ from sklearn.metrics import rand_score, adjusted_mutual_info_score
 from utils import savefig
 from analysis.decomposition import PCA
 from analysis.decoding import PCSelectivity, ItemIdentityDecoder, ItemIndexDecoder, Regressor, Classifier, MultiRegressor, CrossClassifier
-from analysis.behavior import RecallProbability, RecallProbabilityInTime, TemporalFactor
+from analysis.behavior import RecallProbability, RecallProbabilityInTime, TemporalFactor, TemporalFactorV2
 
 
 
@@ -150,9 +150,18 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         print("forward asymmetry:[{},{}]".format(data['accuracy'], forward_asymmetry))
         print("temporal factor:[{},{}]".format(data['accuracy'], temp_fact))
         # write to csv file
+        # with open(fig_path/"contiguity_effect.csv", "w") as f:
+        #     writer = csv.writer(f)
+        #     writer.writerow([data['accuracy'], forward_asymmetry, temp_fact])
+
+        temporal_factor_v2 = TemporalFactorV2()
+        temp_fact_v2 = temporal_factor_v2.fit(memory_contexts, actions[:, -timestep_each_phase:])
+        temp_fact_v2 = np.mean(temp_fact_v2)
+        print("temporal factor v2:[{},{}]".format(data['accuracy'], temp_fact_v2))
+        # write to csv file
         with open(fig_path/"contiguity_effect.csv", "w") as f:
             writer = csv.writer(f)
-            writer.writerow([data['accuracy'], forward_asymmetry, temp_fact])
+            writer.writerow([data['accuracy'], forward_asymmetry, temp_fact, temp_fact_v2])
 
         """ recall probability of first timestep (see primacy and recency) """
         recall_probability_in_time = RecallProbabilityInTime()
@@ -386,54 +395,54 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
 
 
 
-        # """ cross-phase classification """
-        # # index
-        # c_recalling_for_index = np.stack([readouts[i]['state'][timestep_each_phase:timestep_each_phase*2].squeeze() for i in range(all_context_num)])
-        # cross_classifier = CrossClassifier()
-        # cross_classifier.fit(c_memorizing, encoding_index)
-        # r2_index_rec, acc_index_rec = cross_classifier.score(c_recalling_for_index, recall_index, index_mask)
-        # cross_classifier.fit(c_recalling_for_index, recall_index, index_mask)
-        # r2_index_enc, acc_index_enc = cross_classifier.score(c_memorizing, encoding_index)
-        # print("cross acc_index_enc, acc_index_rec: ", acc_index_enc, acc_index_rec)
+        """ cross-phase classification """
+        # index
+        c_recalling_for_index = np.stack([readouts[i]['state'][timestep_each_phase:timestep_each_phase*2].squeeze() for i in range(all_context_num)])
+        cross_classifier = CrossClassifier()
+        cross_classifier.fit(c_memorizing, encoding_index)
+        r2_index_rec, acc_index_rec = cross_classifier.score(c_recalling_for_index, recall_index, index_mask)
+        cross_classifier.fit(c_recalling_for_index, recall_index, index_mask)
+        r2_index_enc, acc_index_enc = cross_classifier.score(c_memorizing, encoding_index)
+        print("cross acc_index_enc, acc_index_rec: ", acc_index_enc, acc_index_rec)
 
-        # # identity
-        # # cross_classifier = CrossClassifier(decoder=ridge_decoder)
-        # # print(memory_sequence[:5]+1, actions[:5, -timestep_each_phase:])
-        # cross_classifier.fit(c_memorizing, memory_sequence+1)
-        # r2_identity_rec, acc_identity_rec = cross_classifier.score(c_recalling, actions[:, -timestep_each_phase:], ridge_mask)
-        # cross_classifier.fit(c_recalling, actions[:, -timestep_each_phase:], ridge_mask)
-        # r2_identity_enc, acc_identity_enc = cross_classifier.score(c_memorizing, memory_sequence+1)
-        # print("cross acc_identity_enc, acc_identity_rec: ", acc_identity_enc, acc_identity_rec)
+        # identity
+        # cross_classifier = CrossClassifier(decoder=ridge_decoder)
+        # print(memory_sequence[:5]+1, actions[:5, -timestep_each_phase:])
+        cross_classifier.fit(c_memorizing, memory_sequence+1)
+        r2_identity_rec, acc_identity_rec = cross_classifier.score(c_recalling, actions[:, -timestep_each_phase:], ridge_mask)
+        cross_classifier.fit(c_recalling, actions[:, -timestep_each_phase:], ridge_mask)
+        r2_identity_enc, acc_identity_enc = cross_classifier.score(c_memorizing, memory_sequence+1)
+        print("cross acc_identity_enc, acc_identity_rec: ", acc_identity_enc, acc_identity_rec)
 
 
-        # plt.figure(figsize=(4.5, 3.7), dpi=180)
-        # bar_width = 0.35
-        # index = np.arange(2)
+        plt.figure(figsize=(4.5, 3.7), dpi=180)
+        bar_width = 0.35
+        index = np.arange(2)
         
-        # plt.bar(index, [acc_index_enc, acc_identity_enc], bar_width, label="recall-encoding")
-        # plt.bar(index + bar_width, [acc_index_rec, acc_identity_rec], bar_width, label="encoding-recall")
+        plt.bar(index, [acc_index_enc, acc_identity_enc], bar_width, label="recall-encoding")
+        plt.bar(index + bar_width, [acc_index_rec, acc_identity_rec], bar_width, label="encoding-recall")
         
-        # plt.xlabel("variable")
-        # plt.ylabel("decoding accuracy")
-        # plt.xticks(index + bar_width / 2, ["index", "identity"])
-        # plt.legend()
-        # plt.tight_layout()
-        # savefig(fig_path/"cross_classification", "cross_phase_accuracy")
+        plt.xlabel("variable")
+        plt.ylabel("decoding accuracy")
+        plt.xticks(index + bar_width / 2, ["index", "identity"])
+        plt.legend()
+        plt.tight_layout()
+        savefig(fig_path/"cross_classification", "cross_phase_accuracy")
 
-        # cross_acc = np.stack([acc_index_enc, acc_identity_enc, acc_index_rec, acc_identity_rec])
-        # np.save(fig_path/"cross_acc.npy", cross_acc)
+        cross_acc = np.stack([acc_index_enc, acc_identity_enc, acc_index_rec, acc_identity_rec])
+        np.save(fig_path/"cross_acc.npy", cross_acc)
 
-        # # mean of encoding and recall phases
-        # plt.figure(figsize=(3, 3.7), dpi=180)
-        # plt.bar(["index", "identity"], [(acc_index_enc+acc_index_rec)/2, (acc_identity_enc+acc_identity_rec)/2], color=["#C08552", "#895737"])
-        # plt.xlabel("variable")
-        # plt.ylabel("cross-decoding accuracy")
-        # plt.ylim(0, 1)
-        # ax = plt.gca()
-        # ax.spines['top'].set_visible(False)
-        # ax.spines['right'].set_visible(False)
-        # plt.tight_layout()
-        # savefig(fig_path/"cross_classification", "cross_phase_accuracy_mean")
+        # mean of encoding and recall phases
+        plt.figure(figsize=(3, 3.7), dpi=180)
+        plt.bar(["index", "identity"], [(acc_index_enc+acc_index_rec)/2, (acc_identity_enc+acc_identity_rec)/2], color=["#C08552", "#895737"])
+        plt.xlabel("variable")
+        plt.ylabel("cross-decoding accuracy")
+        plt.ylim(0, 1)
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        plt.tight_layout()
+        savefig(fig_path/"cross_classification", "cross_phase_accuracy_mean")
 
 
 

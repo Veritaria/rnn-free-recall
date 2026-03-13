@@ -27,7 +27,7 @@ class BaseEMTask(gym.Env):
                  gaussian_stimuli_sigma=0.2,        # the standard deviation of the generated gaussian distribution, in case of "gaussian"
 
                  include_extra_observation=False,   # whether to include the extra observation
-                 extra_observation_type="noise",    # "noise", "gaussian", "gaussian_identity", "position", "hierarchical_binary". "rumelhart", or "feature"
+                 extra_observation_type="noise",    # "noise", "gaussian", "gaussian_identity", "gaussian_fixed", "position", "hierarchical_binary". "rumelhart", or "feature"
                                                         # noise: noise drawn from a normal distribution, gradually drifting
                                                         # gaussian: a gaussian distribution converted from a random one-hot vector, gradually drifting
                                                         # gaussian_identity: a gaussian distribution contverted from item identity
@@ -106,13 +106,13 @@ class BaseEMTask(gym.Env):
                 action_space_dim = action_space_dim + [extra_observation_dim] * extra_position_dim
             elif self.extra_observation_type == "feature":
                 action_space_dim = action_space_dim + [self.feature_dim] * self.num_features
-            elif self.extra_observation_type == "gaussian_identity" or self.extra_observation_type == "gaussian":
+            elif self.extra_observation_type == "gaussian_identity" or self.extra_observation_type == "gaussian" or self.extra_observation_type == "gaussian_fixed":
                 action_space_dim = action_space_dim + [self.extra_observation_dim]
 
         self.action_shape = np.sum(action_space_dim)
         self.action_space = spaces.MultiDiscrete(action_space_dim)
 
-        if self.extra_observation_type == "gaussian" or self.extra_observation_type == "gaussian_identity":
+        if self.extra_observation_type == "gaussian" or self.extra_observation_type == "gaussian_identity" or self.extra_observation_type == "gaussian_fixed":
             self.gaussian_vecs = self._generate_gaussian_vecs(self.extra_observation_dim, self.extra_observation_std, self.extra_gaussian_sigma)
         else:
             self.gaussian_vecs = None
@@ -347,6 +347,9 @@ class BaseEMTask(gym.Env):
             assert len == self.sequence_len
             extra_observation_sequence = self.gaussian_vecs[self.memory_sequence_int]
             extra_observation_data = self.memory_sequence_int
+        elif self.extra_observation_type == "gaussian_fixed":
+            extra_observation_data = np.arange(len)
+            extra_observation_sequence = self.gaussian_vecs[:len]
         elif self.extra_observation_type == "position":
             each_position_dim = self.extra_observation_dim // self.extra_position_dim
             position = np.random.choice(each_position_dim, self.extra_position_dim, replace=True)
@@ -492,7 +495,7 @@ class BaseEMTask(gym.Env):
                 for i in range(self.num_features):
                     obs[offset+self.extra_observation_data[action_offset, i]] = 1
                     offset += self.feature_dim
-            elif self.extra_observation_type == "gaussian_identity" or self.extra_observation_type == "gaussian":
+            elif self.extra_observation_type == "gaussian_identity" or self.extra_observation_type == "gaussian" or self.extra_observation_type == "gaussian_fixed":
                 obs[offset:offset+self.extra_observation_dim] = self.gaussian_vecs[self.extra_observation_data[action_offset]]
                 offset += self.extra_observation_dim
         return obs

@@ -85,7 +85,7 @@
             "extra_observation_dim": 41,
             "extra_observation_std": 0.4,
             "include_extra_observation_during_recall": true,
-            "different_extra_observation_during_recall": false
+            "different_extra_observation_during_recall": true
         }],
         "trainer": {
             "num_iter": 1e5,
