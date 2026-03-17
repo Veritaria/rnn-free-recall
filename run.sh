@@ -6,24 +6,25 @@ noise=('0' '02' '04' '06' '08' '1')
 ctx_noise=('0' '02' '04' '06' '08')
 # ctx_noise=('0' '04' '08' '12')
 
-for n in "${noise[@]}"
-do
-    for g in "${gamma[@]}"
-    do
-        # python run_cluster.py --exp VaryAllSeq8NoNoise --cpus_per_task 1 --setup setup_gamma${g}_noise${n}.json --time 1 --exp_file item_invariant
-        python run_cluster.py --exp VaryAllSeq8LargeNoise --cpus_per_task 1 --setup setup_gamma${g}_noise${n}.json --time 1
-        python run_cluster.py --exp VaryAllSeq8 --cpus_per_task 1 --setup setup_gamma${g}_noise${n}.json --time 1
-        python run_cluster.py --exp VaryAllSeq8NoNoise --cpus_per_task 1 --setup setup_gamma${g}_noise${n}.json --time 1
-    done
-done
-
-# for n in "${ctx_noise[@]}"
+# for n in "${noise[@]}"
 # do
-#     # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma06_randnoise${n}.json --time 10 --mem 16 -train
-#     # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_dim41_gamma09_flush09_gaussiannoise${n}.json --time 10 --mem 16 -train
-#     python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma09_flush09_dim41_randnoise${n}.json --time 10 --mem 16 -train
-#     # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_dim41_randnoise${n}.json --time 10 --mem 16 -train
+#     for g in "${gamma[@]}"
+#     do
+#         # python run_cluster.py --exp VaryAllSeq8NoNoise --cpus_per_task 1 --setup setup_gamma${g}_noise${n}.json --time 1 --exp_file item_invariant
+#         python run_cluster.py --exp VaryAllSeq8LargeNoise --cpus_per_task 1 --setup setup_gamma${g}_noise${n}.json --time 1
+#         python run_cluster.py --exp VaryAllSeq8 --cpus_per_task 1 --setup setup_gamma${g}_noise${n}.json --time 1
+#         python run_cluster.py --exp VaryAllSeq8NoNoise --cpus_per_task 1 --setup setup_gamma${g}_noise${n}.json --time 1
+#     done
 # done
+
+for n in "${ctx_noise[@]}"
+do
+    # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma06_randnoise${n}.json --time 10 --mem 16 -train
+    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma09_flush09_gaussiannoise${n}.json --time 1 --mem 16
+    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gaussiannoise${n}.json --time 1 --mem 16
+    # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma1_flush09_dim41_gaussiannoise${n}.json --time 10 --mem 16 -train
+    # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_dim41_randnoise${n}.json --time 10 --mem 16 -train
+done
 
 # python run_cluster.py --exp ExtraObs.RecallCtx --cpus_per_task 1 --setup setup_gaussiannoise1_same.json --time 1 --mem 16
 # python run_cluster.py --exp ExtraObs.RecallCtx --cpus_per_task 1 --setup setup_gaussiannoise1_diff.json --time 1 --mem 16
