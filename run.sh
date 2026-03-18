@@ -20,9 +20,9 @@ ctx_noise=('0' '02' '04' '06' '08')
 for n in "${ctx_noise[@]}"
 do
     # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma06_randnoise${n}.json --time 10 --mem 16 -train
-    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma09_flush09_gaussiannoise${n}.json --time 1 --mem 16
-    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gaussiannoise${n}.json --time 1 --mem 16
-    # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma1_flush09_dim41_gaussiannoise${n}.json --time 10 --mem 16 -train
+    # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma09_flush09_gaussiannoise${n}.json --time 1 --mem 16
+    # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gaussiannoise${n}.json --time 1 --mem 16
+    python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_gamma1_flush09_dim41_gaussiannoise${n}.json --time 10 --mem 16 -train
     # python run_cluster.py --exp ExtraObs.EnvCxt --cpus_per_task 1 --setup setup_dim41_randnoise${n}.json --time 10 --mem 16 -train
 done
 

@@ -100,7 +100,7 @@
                         "class": "A2CLoss",
                         "use_V": true,
                         "eta": 0.02,
-                        "gamma": 0.999
+                        "gamma": 0.99
                     }
                 ]
             },

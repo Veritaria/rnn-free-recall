@@ -83,7 +83,7 @@
             "include_extra_observation": true,
             "extra_observation_type": "gaussian",
             "extra_observation_dim": 41,
-            "extra_observation_std": 0.4,
+            "extra_observation_std": 0.0,
             "include_extra_observation_during_recall": false
         }],
         "trainer": {
