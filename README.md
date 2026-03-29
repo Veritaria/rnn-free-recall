@@ -18,11 +18,16 @@ The model shall show the memory palace strategy in free recall.
 
 Check the setup file in /experiments/Basic/setups to get the default training settings. You can then modify them according to your needs.
 
-Python files in /experiments/Basic include analyses of the model. The default analysis file is experiment.py. To change an analysis file to run, add a parameter --exp_file [Your_Exp_File] when running main.py.
+Python files in /experiments/Basic include analyses of the model. The default analysis file for a single model is experiment.py. To change an analysis file to run, add a parameter --exp_file [Your_Exp_File] when running main.py.
 
 ### Guidance on replication
 - To run a number of models with different hyperparameters, run all setups in /experiments/VaryAllSeq8/setups. A total of 720 models will be trained, which can be modified in the setting files.
-- To replicate clustering results in the paper, check analysis_fr_paper.ipynb
+- To build dataset based on your trained models, check /plots_notebooks/analysis_build_dataset.ipynb. There are some existing datasets in /data.
+- To replicate clustering results in the paper, check /plots_notebooks/analysis_clustering.ipynb, then check the other notebooks to run the corresponding analysis.
+    - To analyze relationship of strategy metrics, check /plots_notebooks/analysis_metrics.ipynb
+    - To analyze performance for each strategy, check /plots_notebooks/analysis_performance.ipynb
+    - To analyze influence of external context and semantic embeddings, check /plots_notebooks/analysis_ctx.ipynb
+- To analyze the PEERS dataset, check /plots_notebooks/PEERS_analysis.ipynb
 - To submit a number of jobs with slurm, check run.sh and run_cluster.py
 - To run TCM or the reservoir RNN, check /experiments/TCM and /experiments/Reservoir
 - To modify model structure, check /models/model/value_gru.py
@@ -39,6 +44,7 @@ The structure of the repo is as follows.
 │   ├── dynamics
 │   ├── perturbation
 │   └── visualization
+├── data                            # saved data of analysis, can be used for replication
 ├── experiments
 │   ├── Basic                       # A simple setup for quick start
 │   │   ├── experiment.py           # Default set of analyses on the trained models
@@ -54,7 +60,11 @@ The structure of the repo is as follows.
 │   ├── TCM                         # Replication and analyses of TCM
 │   ├── VaryAllSeq8                 # A group of models trained with different hyperparameter settings, used for the clustering analysis
 │   ├── VaryAllSeq8LargeNoise       # A group of models same as above, but with a larger amount of noise injected to working memory
-│   └── VaryAllSeq8NoNoise          # A group of models same as above, but with no noise injected to working memory
+│   ├── VaryAllSeq8NoNoise          # A group of models same as above, but with no noise injected to working memory
+│   ├── ExtraObs
+│   │   ├── EnvCtx                  # Adding external context input to the model
+│   │   └── RecallCtx               # Adding external context to both the study and response phases, studying how matching and unmatched context affect model strategies
+│   └── Semantic                    # Adding semantic embedding to the model
 ├── models
 │   ├── base_module.py              # A basic structure of 
 │   ├── memory                      # A set of memory modules
@@ -72,6 +82,7 @@ The structure of the repo is as follows.
 │   ├── module
 │   ├── planning
 │   └── utils.py
+├── plots_notebooks                 # Jupyter notebooks for generating figures in the paper
 ├── tasks
 │   ├── base.py
 │   ├── ConditionalFreeRecall.py    # The conditional free recall task used in the paper
