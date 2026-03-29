@@ -4,7 +4,7 @@ EXPERIMENT_FOLDER = "experiments"
 SETUP_FOLDER = "setups"
 CONFIG_FOLDER = "configs"
 SAVE_MODEL_FOLDER = "saved_models"
-CLUSTER_FOLDER = "/vast/ml8736/memory-replay"
+CLUSTER_FOLDER = "/scratch/ml8736/memory-replay"
 FIGURE_FOLDER = "figures"
 LOG_FOLDER = "logs"
 # default config and setup files

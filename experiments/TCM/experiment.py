@@ -11,7 +11,7 @@ from sklearn.metrics import rand_score, adjusted_mutual_info_score
 from utils import savefig
 from analysis.decomposition import PCA
 from analysis.decoding import PCSelectivity, ItemIdentityDecoder, ItemIndexDecoder, Regressor, Classifier, MultiRegressor, CrossClassifier
-from analysis.behavior import RecallProbability, RecallProbabilityInTime, TemporalFactor
+from analysis.behavior import RecallProbability, RecallProbabilityInTime, TemporalFactor, TemporalFactorV2
 
 
 
@@ -146,10 +146,15 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         temp_fact = np.mean(temp_fact)
         print("forward asymmetry:[{},{}]".format(data['accuracy'], forward_asymmetry))
         print("temporal factor:[{},{}]".format(data['accuracy'], temp_fact))
+
+        temporal_factor_v2 = TemporalFactorV2()
+        temp_fact_v2 = temporal_factor_v2.fit(memory_contexts, actions[:, -timestep_each_phase:])
+        temp_fact_v2 = np.mean(temp_fact_v2)
+        print("temporal factor v2:[{},{}]".format(data['accuracy'], temp_fact_v2))
         # write to csv file
         with open(fig_path/"contiguity_effect.csv", "w") as f:
             writer = csv.writer(f)
-            writer.writerow([data['accuracy'], forward_asymmetry, temp_fact])
+            writer.writerow([data['accuracy'], forward_asymmetry, temp_fact, temp_fact_v2])
 
         """ recall probability of first timestep (see primacy and recency) """
         recall_probability_in_time = RecallProbabilityInTime()

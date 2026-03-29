@@ -11,7 +11,7 @@ from sklearn.metrics import rand_score, adjusted_mutual_info_score
 from utils import savefig
 from analysis.decomposition import PCA
 from analysis.decoding import PCSelectivity, ItemIdentityDecoder, ItemIndexDecoder, Regressor, Classifier, MultiRegressor, CrossClassifier
-from analysis.behavior import RecallProbability, RecallProbabilityInTime, TemporalFactor
+from analysis.behavior import RecallProbability, RecallProbabilityInTime, TemporalFactor, TemporalFactorV2
 
 
 
@@ -88,8 +88,8 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         plt.figure(figsize=(4.5, 3.7), dpi=180)
         plt.imshow(similarity[timestep_each_phase:timestep_each_phase*2, :timestep_each_phase], cmap="Blues")
         plt.colorbar(label="cosine similarity\nbetween hidden states")
-        plt.xlabel("time in encoding phase")
-        plt.ylabel("time in recall phase")
+        plt.xlabel("time in study phase")
+        plt.ylabel("time in response phase")
         # set the color bar to be between 0 and 1
         plt.clim(0, 1)  # set color limits to [0, 1]
         # plt.title("encoding-recalling state similarity")
@@ -99,8 +99,8 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         plt.figure(figsize=(4.5, 3.7), dpi=180)
         plt.imshow(similarity[:timestep_each_phase, :timestep_each_phase], cmap="Blues")
         plt.colorbar(label="cosine similarity\nbetween hidden states")
-        plt.xlabel("time in encoding phase")
-        plt.ylabel("time in encoding phase")
+        plt.xlabel("time in study phase")
+        plt.ylabel("time in study phase")
         plt.clim(0, 1)
         plt.tight_layout()
         savefig(fig_path/"state_similarity", "encode_encode")
@@ -108,8 +108,8 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         plt.figure(figsize=(4.5, 3.7), dpi=180)
         plt.imshow(similarity[timestep_each_phase:timestep_each_phase*2, timestep_each_phase:timestep_each_phase*2], cmap="Blues")
         plt.colorbar(label="cosine similarity\nbetween hidden states")
-        plt.xlabel("time in recall phase")
-        plt.ylabel("time in recall phase")
+        plt.xlabel("time in response phase")
+        plt.ylabel("time in response phase")
         plt.clim(0, 1)
         plt.tight_layout()
         savefig(fig_path/"state_similarity", "recall_recall")
@@ -150,9 +150,18 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         print("forward asymmetry:[{},{}]".format(data['accuracy'], forward_asymmetry))
         print("temporal factor:[{},{}]".format(data['accuracy'], temp_fact))
         # write to csv file
+        # with open(fig_path/"contiguity_effect.csv", "w") as f:
+        #     writer = csv.writer(f)
+        #     writer.writerow([data['accuracy'], forward_asymmetry, temp_fact])
+
+        temporal_factor_v2 = TemporalFactorV2()
+        temp_fact_v2 = temporal_factor_v2.fit(memory_contexts, actions[:, -timestep_each_phase:])
+        temp_fact_v2 = np.mean(temp_fact_v2)
+        print("temporal factor v2:[{},{}]".format(data['accuracy'], temp_fact_v2))
+        # write to csv file
         with open(fig_path/"contiguity_effect.csv", "w") as f:
             writer = csv.writer(f)
-            writer.writerow([data['accuracy'], forward_asymmetry, temp_fact])
+            writer.writerow([data['accuracy'], forward_asymmetry, temp_fact, temp_fact_v2])
 
         """ recall probability of first timestep (see primacy and recency) """
         recall_probability_in_time = RecallProbabilityInTime()
@@ -213,7 +222,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
 
         plt.figure(figsize=(4.5, 3.7), dpi=180)
         plt.bar(np.arange(1, timestep_each_phase+1), prob_retrieve_memory_by_time)
-        plt.xlabel("time step in recall phase")
+        plt.xlabel("time step in response phase")
         plt.ylabel("probability of\nretrieving memory")
         plt.tight_layout()
         savefig(fig_path/"num_retrieve_memory", "prob_retrieve_each_timestep")
@@ -230,10 +239,10 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         """ PCA """
         pca = PCA()
         pca.fit(states)
-        pca.visualize_state_space(trial_num=20, save_path=fig_path/"pca_state_space", end_step=timestep_each_phase, colormap_label="time in\nencoding phase", 
+        pca.visualize_state_space(trial_num=20, save_path=fig_path/"pca_state_space", end_step=timestep_each_phase, colormap_label="time in study phase", 
                                 file_name="encoding", format="svg")
         pca.visualize_state_space(trial_num=20, save_path=fig_path/"pca_state_space", start_step=timestep_each_phase, end_step=timestep_each_phase*2,
-                                colormap_label="time in recall phase", file_name="recall", format="svg")
+                                colormap_label="time in response phase", file_name="recall", format="svg")
 
 
 
@@ -255,7 +264,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         ridge = ItemIdentityDecoder(decoder=ridge_decoder)
         ridge_encoding_res, ridge_encoding_stat_res = ridge.fit(c_memorizing.transpose(1, 0, 2), memory_sequence.transpose(1, 0))
         ridge.visualize_by_memory(save_path=fig_path/"ridge", save_name="c_enc", colormap_label="item position\nin study order",
-                                xlabel="time in encoding phase")
+                                xlabel="time in study phase")
         np.save(fig_path/"ridge_encoding.npy", ridge_encoding_res)
         # np.save(fig_path/"ridge_encoding_stat.npy", list(ridge_encoding_stat_res.values()))
 
@@ -266,7 +275,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
                     ridge_mask[i][t] = 1
         ridge_recall_res, ridge_recall_stat_res = ridge.fit(c_recalling.transpose(1, 0, 2), actions[:, -timestep_each_phase:].transpose(1, 0), ridge_mask.transpose(1, 0))
         ridge.visualize_by_memory(save_path=fig_path/"ridge", save_name="c_rec", colormap_label="item position\nin recall order",
-                                xlabel="time in recall phase")
+                                xlabel="time in response phase")
         np.save(fig_path/"ridge_recall.npy", ridge_recall_res)
 
 
@@ -285,11 +294,11 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         ridge_decoder = RidgeClassifier()
         ridge = ItemIndexDecoder(decoder=ridge_decoder)
         ridge_encoding_res, index_encoding_acc, index_encoding_r2 = ridge.fit(c_memorizing, encoding_index)
-        ridge.visualize(save_path=fig_path/"ridge_index", save_name="c_enc", xlabel="time in encoding phase")
+        ridge.visualize(save_path=fig_path/"ridge_index", save_name="c_enc", xlabel="time in study phase")
         np.save(fig_path/"ridge_encoding_index.npy", ridge_encoding_res)
 
         ridge_recall_res, index_recall_acc, index_recall_r2 = ridge.fit(c_recalling, recall_index, index_mask)
-        ridge.visualize(save_path=fig_path/"ridge_index", save_name="c_rec", xlabel="time in recall phase")
+        ridge.visualize(save_path=fig_path/"ridge_index", save_name="c_rec", xlabel="time in response phase")
         np.save(fig_path/"ridge_recall_index.npy", ridge_recall_res)
 
         ridge_classifier_stat = {
@@ -539,7 +548,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         plt.imshow(distances, cmap="RdBu", vmin=-1, vmax=1)
         plt.colorbar(label="cosine similarity")
         plt.xlabel("retrieved memory")
-        plt.ylabel("time in recall phase")
+        plt.ylabel("time in response phase")
         plt.tight_layout()
         savefig(fig_path/"distances", "state_retrieved_memory.png")
 
@@ -562,7 +571,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         plt.imshow(distances, cmap="RdBu", vmin=-1, vmax=1)
         plt.colorbar(label="cosine similarity")
         plt.xlabel("most similar memory")
-        plt.ylabel("time in recall phase")
+        plt.ylabel("time in response phase")
         plt.tight_layout()
         savefig(fig_path/"distances", "state_most_similar_memory.png")
 
@@ -579,7 +588,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         plt.imshow(recall_num_by_time, cmap="Blues")
         plt.colorbar(label="recall number")
         plt.xlabel("memory item")
-        plt.ylabel("time in recall phase")
+        plt.ylabel("time in response phase")
         plt.tight_layout()
         savefig(fig_path/"recall_num_by_time", "recall_num_by_time.png")
 

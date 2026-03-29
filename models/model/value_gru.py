@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn as nn
+from copy import deepcopy
 
 from ..utils import load_act_fn, softmax
 from ..base_module import BasicModule
@@ -58,8 +59,8 @@ class ValueMemoryGRU(BasicModule):
 
         self.softmax_beta = softmax_beta        # 1/temperature for softmax function for computing final output decision
         if mem_beta_decay:
-            self.mem_beta = self.memory_module.similarity_measure.softmax_temperature
-            print("mem_beta initialized to {}".format(self.mem_beta))
+            self.mem_beta = torch.nn.Parameter(torch.tensor(self.memory_module.similarity_measure.softmax_temperature, dtype=torch.float32), requires_grad=False)
+            print("mem_beta initialized to {}".format(self.mem_beta.item()))
         else:
             self.mem_beta = None
         self.mem_beta_decay = mem_beta_decay
@@ -164,7 +165,7 @@ class ValueMemoryGRU(BasicModule):
             elif self.init_state_type == 'train_diff':
                 state = self.h0_recall.repeat(batch_size, 1)
             else:
-                raise AttributeError("Invalid init_state_type, should be zeros, train or train_diff")
+                raise AttributeError("Invalid init_state_type, should be zeros, noise, noise_all, noise_random, noise_random_all, random, train or train_diff")
             state = torch.tanh(state)
         else:
             # initialize hidden state for encoding phase
@@ -176,11 +177,11 @@ class ValueMemoryGRU(BasicModule):
                 self.random_init_state = torch.randn((batch_size, self.hidden_dim), device=self.device, requires_grad=True) * self.random_init_noise
                 state = self.random_init_state.clone()
             else:
-                raise AttributeError("Invalid init_state_type, should be zeros, train or train_diff")
+                raise AttributeError("Invalid init_state_type, should be zeros, noise, noise_all, noise_random, noise_random_all, random, train or train_diff")
         
         if self.mem_beta_decay and decay_mem_beta and self.mem_beta > self.mem_beta_min:
-            self.mem_beta = self.mem_beta * self.mem_beta_decay_rate
-            print("mem_beta decayed to {}".format(self.mem_beta))
+            self.mem_beta = torch.nn.Parameter(self.mem_beta * self.mem_beta_decay_rate, requires_grad=False)
+            print("mem_beta decayed to {}".format(self.mem_beta.item()))
         
         self.write(state, 'init_state')
         return state
@@ -199,7 +200,7 @@ class ValueMemoryGRU(BasicModule):
         # retrieve memory
         if self.use_memory and self.retrieving:
             # mem_beta = self.mem_beta if mem_beta is None else mem_beta
-            retrieved_memory, memory_similarity = self.memory_module.retrieve(state, beta=self.mem_beta)
+            retrieved_memory, memory_similarity = self.memory_module.retrieve(state, beta=self.mem_beta.item() if self.mem_beta is not None else None)
             if self.em_gate_type == "constant":
                 mem_gate = self.em_gate
             elif self.em_gate_type == "scalar_sigmoid" or self.em_gate_type == "vector":
