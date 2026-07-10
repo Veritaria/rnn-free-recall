@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --nodes 1
-#SBATCH --time 4:00:00
+#SBATCH --time 2:00:00
 #SBATCH --mem-per-cpu 8G
 #SBATCH --job-name tunnel
 #SBATCH --output jupyter-log/jupyter-log-%J.txt

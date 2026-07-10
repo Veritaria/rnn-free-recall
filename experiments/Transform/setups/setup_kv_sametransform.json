@@ -1,5 +1,5 @@
 {
-    "run_num": 20,
+    "run_num": 5,
     "model": {
         "class": "ValueMemoryGRU",
         "hidden_dim": 128,
@@ -11,18 +11,20 @@
         "softmax_beta": 1.0,
         "evolve_state_between_phases": true,
         "em_gate_type": "constant",
-        "mem_beta_decay": true,
+        "init_state_type": "noise_all",
+        "flush_noise": 1.0,
+        "mem_beta_decay": false,
         "mem_beta_decay_rate": 0.9,
         "mem_beta_min": 0.0005,
-        "init_state_type": "noise",
-        "flush_noise": 0.8,
-        "wm_noise_prop": 0.1,
         "subclasses": [
             {
                 "name": "memory_module",
-                "class": "ValueMemory",
+                "class": "KeyValueMemory",
+                "input_dim": 128,
+                "key_dim": 128,
                 "value_dim": 128,
                 "capacity": 8,
+                "different_transform": false,
                 "recall_method": "weight_sum",
                 "remove_retrieved": false,
                 "subclasses": [
@@ -30,7 +32,7 @@
                         "name": "similarity_measure",
                         "class": "BasicSimilarity",
                         "process_similarity": "softmax",
-                        "softmax_temperature": 0.01
+                        "softmax_temperature": 0.05
                     }
                 ]
             }
@@ -47,18 +49,18 @@
         "softmax_beta": 1.0,
         "evolve_state_between_phases": true,
         "em_gate_type": "constant",
-        "mem_beta_decay": true,
+        "mem_beta_decay": false,
         "mem_beta_decay_rate": 0.9,
         "mem_beta_min": 0.0005,
-        "init_state_type": "noise",
-        "flush_noise": 0.8,
-        "wm_noise_prop": 0.1,
         "subclasses": [
             {
                 "name": "memory_module",
-                "class": "ValueMemory",
+                "class": "KeyValueMemory",
+                "input_dim": 128,
+                "key_dim": 128,
                 "value_dim": 128,
                 "capacity": 8,
+                "different_transform": false,
                 "recall_method": "argmax",
                 "remove_retrieved": false,
                 "subclasses": [
@@ -66,7 +68,7 @@
                         "name": "similarity_measure",
                         "class": "BasicSimilarity",
                         "process_similarity": "softmax",
-                        "softmax_temperature": 0.0005
+                        "softmax_temperature": 0.05
                     }
                 ]
             }
@@ -78,7 +80,7 @@
                 {
                     "vector_env": {
                         "mode": "sync",
-                        "batch_size": 16
+                        "batch_size": 64
                     },
                     "wrapper": [
                         {
@@ -95,19 +97,19 @@
                 }
             ],
             "trainer": {
-                "num_iter": 100000.0,
+                "num_iter": 30000,
                 "test_iter": 500,
                 "save_iter": 5000,
                 "use_memory": true,
-                "stop_test_accu": 0.99,
-                "mem_beta_decay_iter": 3000,
+                "stop_test_accu": 1.01,
+                "mem_beta_decay_iter": 30000,
                 "criterion": {
                     "class": "MultiRLLoss",
                     "criteria": [
                         {
                             "class": "A2CLoss",
                             "use_V": true,
-                            "eta": 0.02,
+                            "eta": 0.04,
                             "gamma": 0.99
                         }
                     ]
@@ -122,7 +124,63 @@
                 },
                 "optimizer": {
                     "class": "Adam",
-                    "lr": 0.003,
+                    "lr": 3e-3,
+                    "lr_decay_factor": 0.1,
+                    "lr_decay_patience": 30,
+                    "lr_decay_threshold": 0.001,
+                    "min_lr": 1e-07
+                }
+            }
+        }, {
+            "env": [
+                {
+                    "vector_env": {
+                        "mode": "sync",
+                        "batch_size": 64
+                    },
+                    "wrapper": [
+                        {
+                            "class": "MetaLearningEnv"
+                        }
+                    ],
+                    "class": "FreeRecall",
+                    "num_features": 6,
+                    "feature_dim": 2,
+                    "sequence_len": 8,
+                    "correct_reward": 1.0,
+                    "wrong_reward": -0.75,
+                    "no_action_reward": -0.75
+                }
+            ],
+            "trainer": {
+                "num_iter": 200000.0,
+                "test_iter": 500,
+                "save_iter": 5000,
+                "use_memory": true,
+                "stop_test_accu": 0.99,
+                "mem_beta_decay_iter": 5000,
+                "criterion": {
+                    "class": "MultiRLLoss",
+                    "criteria": [
+                        {
+                            "class": "A2CLoss",
+                            "use_V": true,
+                            "eta": 0.04,
+                            "gamma": 0.99
+                        }
+                    ]
+                },
+                "ax_criterion": {
+                    "class": "MultiAuxiliaryLoss",
+                    "criteria": [
+                        {
+                            "class": "MemoryOneHotRegularization"
+                        }
+                    ]
+                },
+                "optimizer": {
+                    "class": "Adam",
+                    "lr": 3e-3,
                     "lr_decay_factor": 0.1,
                     "lr_decay_patience": 30,
                     "lr_decay_threshold": 0.001,

@@ -144,7 +144,7 @@
                     "num_features": 6,
                     "feature_dim": 2,
                     "sequence_len": 8,
-                    "fix_condition": true,
+                    "fix_condition": false,
                     "fix_one_feature": true,
                     "correct_reward": 1.0,
                     "wrong_reward": -0.7,
@@ -190,5 +190,5 @@
     ],
     "load_checkpoints": false,
     "load_saved_model": false,
-    "context_num": 1000
+    "context_num": 500
 }

@@ -3,6 +3,7 @@ import csv
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import sklearn.metrics.pairwise as skp
 from sklearn.linear_model import RidgeClassifier, Ridge, Lasso, LinearRegression
 from sklearn.cluster import KMeans
@@ -17,6 +18,8 @@ from analysis.behavior import RecallProbability, RecallProbabilityInTime, Tempor
 
 def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
     plt.rcParams['font.size'] = 16
+
+    mpl.rcParams['svg.fonttype'] = 'none'
 
     env = env[0]
 
@@ -103,7 +106,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         plt.ylabel("time in study phase")
         plt.clim(0, 1)
         plt.tight_layout()
-        savefig(fig_path/"state_similarity", "encode_encode")
+        savefig(fig_path/"state_similarity", "encode_encode", format="svg")
 
         plt.figure(figsize=(4.5, 3.7), dpi=180)
         plt.imshow(similarity[timestep_each_phase:timestep_each_phase*2, timestep_each_phase:timestep_each_phase*2], cmap="Blues")
@@ -112,7 +115,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         plt.ylabel("time in response phase")
         plt.clim(0, 1)
         plt.tight_layout()
-        savefig(fig_path/"state_similarity", "recall_recall")
+        savefig(fig_path/"state_similarity", "recall_recall", format="svg")
 
         """ memory gate """
         # if "mem_gate_recall" in readouts[0]:
@@ -264,7 +267,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         ridge = ItemIdentityDecoder(decoder=ridge_decoder)
         ridge_encoding_res, ridge_encoding_stat_res = ridge.fit(c_memorizing.transpose(1, 0, 2), memory_sequence.transpose(1, 0))
         ridge.visualize_by_memory(save_path=fig_path/"ridge", save_name="c_enc", colormap_label="item position\nin study order",
-                                xlabel="time in study phase")
+                                xlabel="time in study phase", format="svg")
         np.save(fig_path/"ridge_encoding.npy", ridge_encoding_res)
         # np.save(fig_path/"ridge_encoding_stat.npy", list(ridge_encoding_stat_res.values()))
 
@@ -275,7 +278,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
                     ridge_mask[i][t] = 1
         ridge_recall_res, ridge_recall_stat_res = ridge.fit(c_recalling.transpose(1, 0, 2), actions[:, -timestep_each_phase:].transpose(1, 0), ridge_mask.transpose(1, 0))
         ridge.visualize_by_memory(save_path=fig_path/"ridge", save_name="c_rec", colormap_label="item position\nin recall order",
-                                xlabel="time in response phase")
+                                xlabel="time in response phase", format="svg")
         np.save(fig_path/"ridge_recall.npy", ridge_recall_res)
 
 
