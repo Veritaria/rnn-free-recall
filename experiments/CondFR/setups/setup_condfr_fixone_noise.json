@@ -15,7 +15,7 @@
         "mem_beta_decay_rate": 0.95,
         "mem_beta_min": 0.0005,
         "init_state_type": "zeros",
-        "wm_noise_prop": 0.01,
+        "wm_noise_prop": 0.1,
         "subclasses": [
             {
                 "name": "memory_module",
@@ -50,7 +50,7 @@
         "mem_beta_decay_rate": 0.9,
         "mem_beta_min": 0.0005,
         "init_state_type": "zeros",
-        "wm_noise_prop": 0.01,
+        "wm_noise_prop": 0.1,
         "subclasses": [
             {
                 "name": "memory_module",
@@ -88,7 +88,7 @@
                     "feature_dim": 2,
                     "sequence_len": 8,
                     "correct_reward": 1.0,
-                    "wrong_reward": -0.8,
+                    "wrong_reward": -0.7,
                     "no_action_reward": -0.0,
                     "fix_one_feature": true
                 }
@@ -106,8 +106,8 @@
                         {
                             "class": "A2CLoss",
                             "use_V": true,
-                            "eta": 0.03,
-                            "gamma": 0.999
+                            "eta": 0.04,
+                            "gamma": 0.99
                         }
                     ]
                 },
@@ -147,7 +147,7 @@
                     "fix_condition": false,
                     "fix_one_feature": true,
                     "correct_reward": 1.0,
-                    "wrong_reward": -0.8,
+                    "wrong_reward": -0.7,
                     "no_action_reward": -0.0
                 }
             ],

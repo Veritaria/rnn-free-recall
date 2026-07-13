@@ -1,6 +1,6 @@
 # RNN free recall
 
-This is the code for the paper: [A neural network model of free recall learns multiple memory strategies](https://www.biorxiv.org/content/10.1101/2025.09.25.678592v1.abstract).
+This is the code for the paper: [A neural network model of free recall learns multiple memory strategies](https://www.biorxiv.org/content/10.1101/2025.09.25.678592v2.abstract).
 
 ### Getting started
 Install required packages:
@@ -20,18 +20,18 @@ Check the setup file in /experiments/Basic/setups to get the default training se
 
 Python files in /experiments/Basic include analyses of the model. The default analysis file for a single model is experiment.py. To change an analysis file to run, add a parameter --exp_file [Your_Exp_File] when running main.py.
 
-### Guidance on replication
-- To run a number of models with different hyperparameters, run all setups in /experiments/VaryAllSeq8/setups. A total of 720 models will be trained, which can be modified in the setting files.
-- To build dataset based on your trained models, check /plots_notebooks/analysis_build_dataset.ipynb. There are some existing datasets in /data.
-- To replicate clustering results in the paper, check /plots_notebooks/analysis_clustering.ipynb, then check the other notebooks to run the corresponding analysis.
+### Guidance on running the code
+- To run a number of models with different hyperparameters, run all setups in /experiments/VaryAllSeq8/setups. The number of models to train can be modified in the setting files.
+- To build dataset based on your trained models, check /plots_notebooks/analysis_build_dataset.ipynb. There are some existing datasets generated from trained models in /data.
+- To perform clustering analysis for models, check /plots_notebooks/analysis_clustering.ipynb, then check the other notebooks to run the corresponding analysis.
     - To analyze relationship of strategy metrics, check /plots_notebooks/analysis_metrics.ipynb
     - To analyze performance for each strategy, check /plots_notebooks/analysis_performance.ipynb
     - To analyze influence of external context and semantic embeddings, check /plots_notebooks/analysis_ctx.ipynb
 - To analyze the PEERS dataset, check /plots_notebooks/PEERS_analysis.ipynb
-- To submit a number of jobs with slurm, check run.sh and run_cluster.py
 - To run TCM or the reservoir RNN, check /experiments/TCM and /experiments/Reservoir
 - To modify model structure, check /models/model/value_gru.py
 - To modify the task, check /tasks/FreeRecall.py
+- To submit a number of jobs with slurm, check run.sh and run_cluster.py
 
 ### Description of files
 The structure of the repo is as follows.
@@ -77,10 +77,8 @@ The structure of the repo is as follows.
 │   │   └── value.py                # The default memory module of the neural network model
 │   ├── model
 │   │   ├── tcm.py                  # A classic TCM model
-│   │   ├── value_ctrnn.py
 │   │   └── value_gru.py            # The default model architecture used in the paper
 │   ├── module
-│   ├── planning
 │   └── utils.py
 ├── plots_notebooks                 # Jupyter notebooks for generating figures in the paper
 ├── tasks
@@ -100,8 +98,7 @@ The structure of the repo is as follows.
 ├── consts.py                       # Some default paths for storing data
 ├── main.py                         # Where the main training and analysis start
 ├── run_cluster.py                  # Generate a number of bash files to submit jobs with slurm
-├── run.sh                          # Run all setups in /experiments/VaryAllSeq8 with slurm
-└── vary_param.py                   # Generate a number of setup files for different hyperparameters
+└── run.sh                          # Run all setups in /experiments/VaryAllSeq8 with slurm
 ```
 
 
