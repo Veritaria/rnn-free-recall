@@ -30,7 +30,7 @@ class ConditionalFreeRecall(BaseEMTask):
                     if self.memory_sequence[i, self.condition_feature] == self.condition_value:
                         self.matched_item_num += 1
             self.memory_sequence_int = self._convert_item_to_int(self.memory_sequence)
-            obs = self._generate_observation(self.memory_sequence[0], self.condition_feature, self.condition_value, 
+            obs = self._generate_observation(self.memory_sequence[0], None, self.condition_feature, self.condition_value, 
                                          include_condition=self.include_condition_during_encode)
         
         self.matched_item_indexes = np.where(self.memory_sequence[:, self.condition_feature] == self.condition_value)[0]

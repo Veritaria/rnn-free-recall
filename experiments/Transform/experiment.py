@@ -12,7 +12,7 @@ from sklearn.metrics import rand_score, adjusted_mutual_info_score
 from utils import savefig
 from analysis.decomposition import PCA
 from analysis.decoding import PCSelectivity, ItemIdentityDecoder, ItemIndexDecoder, Regressor, Classifier, MultiRegressor, CrossClassifier
-from analysis.behavior import RecallProbability, RecallProbabilityInTime, TemporalFactor, TemporalFactorV2
+from analysis.behavior import RecallProbability, RecallProbabilityInTime, TemporalFactor
 
 
 
@@ -64,7 +64,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
 
         print(memory_contexts.shape, actions.shape, rewards.shape)
 
-        if "ValueMemory" in readouts[0] and "similarity" in readouts[0]["ValueMemory"]:
+        if "KeyValueMemory" in readouts[0] and "similarity" in readouts[0]["KeyValueMemory"]:
             has_memory = True
         else:
             has_memory = False
@@ -74,7 +74,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         for i in range(5):
             if has_memory:
                 print("context {}, gt: {}, action: {}, retrieved memory: {}, rewards: {}".format(i, memory_contexts[i], actions[i][sequence_len:], 
-                np.argmax(readouts[i]["ValueMemory"]["similarity"].squeeze(), axis=1)+1, rewards[i][sequence_len:]))
+                np.argmax(readouts[i]["KeyValueMemory"]["similarity"].squeeze(), axis=1)+1, rewards[i][sequence_len:]))
             else:
                 print("context {}, gt: {}, action: {}, rewards: {}".format(i, memory_contexts[i], actions[i][sequence_len:], 
                 rewards[i][sequence_len:]))
@@ -153,18 +153,9 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         print("forward asymmetry:[{},{}]".format(data['accuracy'], forward_asymmetry))
         print("temporal factor:[{},{}]".format(data['accuracy'], temp_fact))
         # write to csv file
-        # with open(fig_path/"contiguity_effect.csv", "w") as f:
-        #     writer = csv.writer(f)
-        #     writer.writerow([data['accuracy'], forward_asymmetry, temp_fact])
-
-        temporal_factor_v2 = TemporalFactorV2()
-        temp_fact_v2 = temporal_factor_v2.fit(memory_contexts, actions[:, -timestep_each_phase:])
-        temp_fact_v2 = np.mean(temp_fact_v2)
-        print("temporal factor v2:[{},{}]".format(data['accuracy'], temp_fact_v2))
-        # write to csv file
         with open(fig_path/"contiguity_effect.csv", "w") as f:
             writer = csv.writer(f)
-            writer.writerow([data['accuracy'], forward_asymmetry, temp_fact, temp_fact_v2])
+            writer.writerow([data['accuracy'], forward_asymmetry, temp_fact])
 
         """ recall probability of first timestep (see primacy and recency) """
         recall_probability_in_time = RecallProbabilityInTime()
@@ -176,7 +167,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         retrieved_memories = []
         memory_gates = []
         for i in range(all_context_num):
-            retrieved_memory = readouts[i]["ValueMemory"]["similarity"].squeeze()
+            retrieved_memory = readouts[i]["KeyValueMemory"]["similarity"].squeeze()
             retrieved_memory = np.argmax(retrieved_memory, axis=-1)
             retrieved_memories.append(retrieved_memory)
             memory_gates.append(readouts[i]['mem_gate_recall'].squeeze())
@@ -238,14 +229,37 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
             states.append(readouts[i]['state'])
         states = np.stack(states).squeeze()
         print(states.shape)
+
+        keys = np.stack([readouts[i]['KeyValueMemory']['encoded_key'].squeeze() for i in range(all_context_num)])
+        values = np.stack([readouts[i]['KeyValueMemory']['encoded_value'].squeeze() for i in range(all_context_num)])
+        print(keys.shape, values.shape)
+
         
         """ PCA """
         pca = PCA()
         pca.fit(states)
         pca.visualize_state_space(trial_num=20, save_path=fig_path/"pca_state_space", end_step=timestep_each_phase, colormap_label="time in study phase", 
-                                file_name="encoding", format="svg")
+                                file_name="study", format="svg")
         pca.visualize_state_space(trial_num=20, save_path=fig_path/"pca_state_space", start_step=timestep_each_phase, end_step=timestep_each_phase*2,
                                 colormap_label="time in response phase", file_name="recall", format="svg")
+
+        # PCA for keys and values
+        keys_values_concat = np.concatenate([keys, values], axis=1)
+        print(keys_values_concat.shape)
+        pca = PCA()
+        pca.fit(keys_values_concat)
+        pca.visualize_state_space(trial_num=20, save_path=fig_path/"pca_state_space", end_step=timestep_each_phase, colormap_label="time in study phase", 
+                                file_name="keys", axis_label="keys", format="svg")
+        pca.visualize_state_space(trial_num=20, save_path=fig_path/"pca_state_space", start_step=timestep_each_phase, end_step=timestep_each_phase*2,
+                                colormap_label="time in study phase", file_name="values", axis_label="values", format="svg")
+
+        # separate keys and values
+        pca.fit(keys)
+        pca.visualize_state_space(trial_num=20, save_path=fig_path/"pca_state_space", end_step=timestep_each_phase, colormap_label="time in study phase", 
+                                file_name="keys_only", axis_label="keys", format="svg")
+        pca.fit(values)
+        pca.visualize_state_space(trial_num=20, save_path=fig_path/"pca_state_space", end_step=timestep_each_phase, colormap_label="time in study phase", 
+                                file_name="values_only", axis_label="values", format="svg")
 
 
 
@@ -253,7 +267,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         """ decode item identity """
         retrieved_memories = []
         for i in range(all_context_num):
-            retrieved_memory = readouts[i]["ValueMemory"]["similarity"].squeeze()
+            retrieved_memory = readouts[i]["KeyValueMemory"]["similarity"].squeeze()
             retrieved_memory = np.argmax(retrieved_memory, axis=-1)
             retrieved_memories.append(retrieved_memory)
         retrieved_memories = np.stack(retrieved_memories)
@@ -267,7 +281,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
         ridge = ItemIdentityDecoder(decoder=ridge_decoder)
         ridge_encoding_res, ridge_encoding_stat_res = ridge.fit(c_memorizing.transpose(1, 0, 2), memory_sequence.transpose(1, 0))
         ridge.visualize_by_memory(save_path=fig_path/"ridge", save_name="c_enc", colormap_label="item position\nin study order",
-                                xlabel="time in study phase", format="svg")
+                                xlabel="time in study phase")
         np.save(fig_path/"ridge_encoding.npy", ridge_encoding_res)
         # np.save(fig_path/"ridge_encoding_stat.npy", list(ridge_encoding_stat_res.values()))
 
@@ -278,7 +292,7 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
                     ridge_mask[i][t] = 1
         ridge_recall_res, ridge_recall_stat_res = ridge.fit(c_recalling.transpose(1, 0, 2), actions[:, -timestep_each_phase:].transpose(1, 0), ridge_mask.transpose(1, 0))
         ridge.visualize_by_memory(save_path=fig_path/"ridge", save_name="c_rec", colormap_label="item position\nin recall order",
-                                xlabel="time in response phase", format="svg")
+                                xlabel="time in response phase")
         np.save(fig_path/"ridge_recall.npy", ridge_recall_res)
 
 
@@ -399,54 +413,182 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
 
 
         """ cross-phase classification """
-        # index
-        c_recalling_for_index = np.stack([readouts[i]['state'][timestep_each_phase:timestep_each_phase*2].squeeze() for i in range(all_context_num)])
-        cross_classifier = CrossClassifier()
-        cross_classifier.fit(c_memorizing, encoding_index)
-        r2_index_rec, acc_index_rec = cross_classifier.score(c_recalling_for_index, recall_index, index_mask)
-        cross_classifier.fit(c_recalling_for_index, recall_index, index_mask)
-        r2_index_enc, acc_index_enc = cross_classifier.score(c_memorizing, encoding_index)
-        print("cross acc_index_enc, acc_index_rec: ", acc_index_enc, acc_index_rec)
+        # # index
+        # c_recalling_for_index = np.stack([readouts[i]['state'][timestep_each_phase:timestep_each_phase*2].squeeze() for i in range(all_context_num)])
+        # cross_classifier = CrossClassifier()
+        # cross_classifier.fit(c_memorizing, encoding_index)
+        # r2_index_rec, acc_index_rec = cross_classifier.score(c_recalling_for_index, recall_index, index_mask)
+        # cross_classifier.fit(c_recalling_for_index, recall_index, index_mask)
+        # r2_index_enc, acc_index_enc = cross_classifier.score(c_memorizing, encoding_index)
+        # print("cross acc_index_enc, acc_index_rec: ", acc_index_enc, acc_index_rec)
 
-        # identity
-        # cross_classifier = CrossClassifier(decoder=ridge_decoder)
-        # print(memory_sequence[:5]+1, actions[:5, -timestep_each_phase:])
-        cross_classifier.fit(c_memorizing, memory_sequence+1)
-        r2_identity_rec, acc_identity_rec = cross_classifier.score(c_recalling, actions[:, -timestep_each_phase:], ridge_mask)
-        cross_classifier.fit(c_recalling, actions[:, -timestep_each_phase:], ridge_mask)
-        r2_identity_enc, acc_identity_enc = cross_classifier.score(c_memorizing, memory_sequence+1)
-        print("cross acc_identity_enc, acc_identity_rec: ", acc_identity_enc, acc_identity_rec)
+        # # identity
+        # # cross_classifier = CrossClassifier(decoder=ridge_decoder)
+        # # print(memory_sequence[:5]+1, actions[:5, -timestep_each_phase:])
+        # cross_classifier.fit(c_memorizing, memory_sequence+1)
+        # r2_identity_rec, acc_identity_rec = cross_classifier.score(c_recalling, actions[:, -timestep_each_phase:], ridge_mask)
+        # cross_classifier.fit(c_recalling, actions[:, -timestep_each_phase:], ridge_mask)
+        # r2_identity_enc, acc_identity_enc = cross_classifier.score(c_memorizing, memory_sequence+1)
+        # print("cross acc_identity_enc, acc_identity_rec: ", acc_identity_enc, acc_identity_rec)
 
+
+        # plt.figure(figsize=(4.5, 3.7), dpi=180)
+        # bar_width = 0.35
+        # index = np.arange(2)
+        
+        # plt.bar(index, [acc_index_enc, acc_identity_enc], bar_width, label="recall-encoding")
+        # plt.bar(index + bar_width, [acc_index_rec, acc_identity_rec], bar_width, label="encoding-recall")
+        
+        # plt.xlabel("variable")
+        # plt.ylabel("decoding accuracy")
+        # plt.xticks(index + bar_width / 2, ["index", "identity"])
+        # plt.legend()
+        # plt.tight_layout()
+        # savefig(fig_path/"cross_classification", "cross_phase_accuracy")
+
+        # cross_acc = np.stack([acc_index_enc, acc_identity_enc, acc_index_rec, acc_identity_rec])
+        # np.save(fig_path/"cross_acc.npy", cross_acc)
+
+        # # mean of encoding and recall phases
+        # plt.figure(figsize=(3, 3.7), dpi=180)
+        # plt.bar(["index", "identity"], [(acc_index_enc+acc_index_rec)/2, (acc_identity_enc+acc_identity_rec)/2], color=["#C08552", "#895737"])
+        # plt.xlabel("variable")
+        # plt.ylabel("cross-decoding accuracy")
+        # plt.ylim(0, 1)
+        # ax = plt.gca()
+        # ax.spines['top'].set_visible(False)
+        # ax.spines['right'].set_visible(False)
+        # plt.tight_layout()
+        # savefig(fig_path/"cross_classification", "cross_phase_accuracy_mean")
+
+
+
+        """ is there a bias to recall a particular item at a particular time step? """
+        vocabulary_size = env.unwrapped.vocabulary_size
+        recall_num_by_time = np.zeros((timestep_each_phase, vocabulary_size+1))
+        rec_actions = actions[:, -timestep_each_phase:].astype(int)
+        for i in range(all_context_num):
+            for t in range(timestep_each_phase):
+                recall_num_by_time[t][rec_actions[i][t]] += 1
+        plt.figure(figsize=(0.25*vocabulary_size, 3.7), dpi=180)
+        plt.imshow(recall_num_by_time, cmap="Blues")
+        plt.colorbar(label="recall number")
+        plt.xlabel("memory item")
+        plt.ylabel("time in response phase")
+        plt.tight_layout()
+        savefig(fig_path/"recall_num_by_time", "recall_num_by_time.png")
+
+
+
+        """ state similarity of keys and values """
+        """ do keys change more smoothly than values? """
+
+        keys_similarities = []
+        for i in range(all_context_num):
+            keys_similarities.append(skp.cosine_similarity(keys[i], keys[i]))
+        keys_similarities = np.stack(keys_similarities)
+        keys_similarity = np.mean(keys_similarities, axis=0)
+
+        values_similarities = []
+        for i in range(all_context_num):
+            values_similarities.append(skp.cosine_similarity(values[i], values[i]))
+        values_similarities = np.stack(values_similarities)
+        values_similarity = np.mean(values_similarities, axis=0)
+
+        print("keys_similarity shape: ", keys_similarity.shape)
+        print("values_similarity shape: ", values_similarity.shape)
+
+        plt.figure(figsize=(4.5, 3.7), dpi=180)
+        plt.imshow(keys_similarity, cmap="Blues")
+        plt.colorbar(label="cosine similarity")
+        plt.xlabel("keys")
+        plt.ylabel("keys")
+        plt.tight_layout()
+        savefig(fig_path/"state_similarity", "keys_similarity")
+
+        plt.figure(figsize=(4.5, 3.7), dpi=180)
+        plt.imshow(values_similarity, cmap="Blues")
+        plt.colorbar(label="cosine similarity")
+        plt.xlabel("values")
+        plt.ylabel("values")
+        plt.tight_layout()
+        savefig(fig_path/"state_similarity", "values_similarity")
+
+        keys_values_similarities = []
+        for i in range(all_context_num):
+            keys_values_similarities.append(skp.cosine_similarity(keys[i], values[i]))
+        keys_values_similarities = np.stack(keys_values_similarities)
+        keys_values_similarity = np.mean(keys_values_similarities, axis=0)
+        print("keys_values_similarity shape: ", keys_values_similarity.shape)
+
+        plt.figure(figsize=(4.5, 3.7), dpi=180)
+        plt.imshow(keys_values_similarity, cmap="Blues")
+        plt.colorbar(label="cosine similarity")
+        plt.xlabel("keys")
+        plt.ylabel("values")
+        plt.tight_layout()
+        savefig(fig_path/"state_similarity", "keys_values_similarity")
+
+
+
+        """ decoding index and identity from keys and values """
+        decoder = RidgeClassifier()
+        index_decoder = ItemIndexDecoder(decoder=decoder)
+        keys_index_res, keys_index_acc, keys_index_r2 = index_decoder.fit(keys, encoding_index)
+        values_index_res, values_index_acc, values_index_r2 = index_decoder.fit(values, encoding_index)
+        print("keys_index decoding accuracy: ", keys_index_acc)
+        print("values_index decoding accuracy: ", values_index_acc)
+
+        decoder = RidgeClassifier()
+        identity_decoder = ItemIdentityDecoder(decoder=decoder)
+        keys_identity_res, keys_identity_stat_res = identity_decoder.fit(keys.transpose(1, 0, 2), memory_sequence.transpose(1, 0)+1)
+        values_identity_res, values_identity_stat_res = identity_decoder.fit(values.transpose(1, 0, 2), memory_sequence.transpose(1, 0)+1)
+        keys_identity_acc = keys_identity_stat_res["acc"]
+        values_identity_acc = values_identity_stat_res["acc"]
+        print("keys_identity decoding accuracy: ", keys_identity_acc)
+        print("values_identity decoding accuracy: ", values_identity_acc)
 
         plt.figure(figsize=(4.5, 3.7), dpi=180)
         bar_width = 0.35
         index = np.arange(2)
-        
-        plt.bar(index, [acc_index_enc, acc_identity_enc], bar_width, label="recall-encoding")
-        plt.bar(index + bar_width, [acc_index_rec, acc_identity_rec], bar_width, label="encoding-recall")
-        
+        plt.bar(index, [keys_index_acc, keys_identity_acc], bar_width, label="keys")
+        plt.bar(index + bar_width, [values_index_acc, values_identity_acc], bar_width, label="values")
         plt.xlabel("variable")
         plt.ylabel("decoding accuracy")
         plt.xticks(index + bar_width / 2, ["index", "identity"])
         plt.legend()
         plt.tight_layout()
-        savefig(fig_path/"cross_classification", "cross_phase_accuracy")
+        savefig(fig_path/"keys_values_decoder", "decoding_accuracy")
 
-        cross_acc = np.stack([acc_index_enc, acc_identity_enc, acc_index_rec, acc_identity_rec])
-        np.save(fig_path/"cross_acc.npy", cross_acc)
+        keys_values_decoder_acc = np.stack([keys_index_acc, keys_identity_acc, values_index_acc, values_identity_acc])
+        np.save(fig_path/"keys_values_decoder_acc.npy", keys_values_decoder_acc)
 
-        # mean of encoding and recall phases
-        plt.figure(figsize=(3, 3.7), dpi=180)
-        plt.bar(["index", "identity"], [(acc_index_enc+acc_index_rec)/2, (acc_identity_enc+acc_identity_rec)/2], color=["#C08552", "#895737"])
+
+        """ explained variance of keys and values """
+        multi_regressor = MultiRegressor()
+        r2_keys_index, r2_keys_identity = multi_regressor.fit(keys, encoding_index, memory_sequence)
+        r2_values_index, r2_values_identity = multi_regressor.fit(values, encoding_index, memory_sequence)
+        print("r2_keys_index: ", r2_keys_index)
+        print("r2_keys_identity: ", r2_keys_identity)
+        print("r2_values_index: ", r2_values_index)
+        print("r2_values_identity: ", r2_values_identity)
+        np.save(fig_path/"explained_variance_keys_values.npy", np.stack([r2_keys_index, r2_keys_identity, r2_values_index, r2_values_identity]))
+
+        plt.figure(figsize=(4.5, 3.7), dpi=180)
+        bar_width = 0.35
+        index = np.arange(2)
+        plt.bar(index, [r2_keys_index, r2_values_index], bar_width, label="index", color=["#9A8C98"])
+        plt.bar(index + bar_width, [r2_keys_identity, r2_values_identity], bar_width, label="identity", color=["#C9ADA7"])
         plt.xlabel("variable")
-        plt.ylabel("cross-decoding accuracy")
-        plt.ylim(0, 1)
+        plt.ylabel("explained variance")
+        plt.xticks(index + bar_width / 2, ["index", "identity"])
+        plt.legend()
         ax = plt.gca()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         plt.tight_layout()
-        savefig(fig_path/"cross_classification", "cross_phase_accuracy_mean")
-
+        savefig(fig_path/"keys_values_decoder", "explained_variance")
+        
 
 
         """ PC selectivity """
@@ -515,85 +657,65 @@ def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
 
 
         """ do the hidden state get away from the just recalled item? """
-        # get all the data needed
-        rec_states = []
-        retrieved_memories = []
-        most_similar_memories = []
-        for i in range(all_context_num):
-            state = readouts[i]['state'].squeeze()
-            rec_states.append(state[-timestep_each_phase:])
-            retrieved_memories.append(readouts[i]['ValueMemory']['retrieved_memory'].squeeze()[-timestep_each_phase:])
-            memory_similarity = readouts[i]['ValueMemory']['similarity']
-            most_similar_index = np.argmax(memory_similarity, axis=-1).squeeze()[-timestep_each_phase:]
-            most_similar_memories.append(state[most_similar_index])
-        rec_states = np.stack(rec_states)
-        retrieved_memories = np.stack(retrieved_memories)
-        most_similar_memories = np.stack(most_similar_memories)
-        print("rec_states shape: ", rec_states.shape)
-        print("retrieved_memories shape: ", retrieved_memories.shape)
+        # # get all the data needed
+        # rec_states = []
+        # retrieved_memories = []
+        # most_similar_memories = []
+        # for i in range(all_context_num):
+        #     state = readouts[i]['state'].squeeze()
+        #     rec_states.append(state[-timestep_each_phase:])
+        #     retrieved_memories.append(readouts[i]['KeyValueMemory']['retrieved_memory'].squeeze()[-timestep_each_phase:])
+        #     memory_similarity = readouts[i]['KeyValueMemory']['similarity']
+        #     most_similar_index = np.argmax(memory_similarity, axis=-1).squeeze()[-timestep_each_phase:]
+        #     most_similar_memories.append(state[most_similar_index])
+        # rec_states = np.stack(rec_states)
+        # retrieved_memories = np.stack(retrieved_memories)
+        # most_similar_memories = np.stack(most_similar_memories)
+        # print("rec_states shape: ", rec_states.shape)
+        # print("retrieved_memories shape: ", retrieved_memories.shape)
 
-        # calculate the distance between the hidden state and the just recalled memory
-        distances = np.zeros((timestep_each_phase, timestep_each_phase))
-        for i in range(timestep_each_phase):
-            for j in range(timestep_each_phase):
-                dist = 0.0
-                for k in range(all_context_num):
-                    x = rec_states[k][i] / np.linalg.norm(rec_states[k][i])
-                    y = retrieved_memories[k][j] / np.linalg.norm(retrieved_memories[k][j])
-                    # print(x.shape, y.shape)
-                    if np.sum(x * y) > 1:
-                        print("strange cosine similarity: ", np.sum(x * y))
-                    dist += np.sum(x * y)
-                distances[i][j] = dist / all_context_num
-        # distances = distances / np.sum(np.abs(distances), axis=-1, keepdims=True)
+        # # calculate the distance between the hidden state and the just recalled memory
+        # distances = np.zeros((timestep_each_phase, timestep_each_phase))
+        # for i in range(timestep_each_phase):
+        #     for j in range(timestep_each_phase):
+        #         dist = 0.0
+        #         for k in range(all_context_num):
+        #             x = rec_states[k][i] / np.linalg.norm(rec_states[k][i])
+        #             y = retrieved_memories[k][j] / np.linalg.norm(retrieved_memories[k][j])
+        #             # print(x.shape, y.shape)
+        #             if np.sum(x * y) > 1:
+        #                 print("strange cosine similarity: ", np.sum(x * y))
+        #             dist += np.sum(x * y)
+        #         distances[i][j] = dist / all_context_num
+        # # distances = distances / np.sum(np.abs(distances), axis=-1, keepdims=True)
         
-        plt.figure(figsize=(4.5, 3.7), dpi=180)
-        plt.imshow(distances, cmap="RdBu", vmin=-1, vmax=1)
-        plt.colorbar(label="cosine similarity")
-        plt.xlabel("retrieved memory")
-        plt.ylabel("time in response phase")
-        plt.tight_layout()
-        savefig(fig_path/"distances", "state_retrieved_memory.png")
+        # plt.figure(figsize=(4.5, 3.7), dpi=180)
+        # plt.imshow(distances, cmap="RdBu", vmin=-1, vmax=1)
+        # plt.colorbar(label="cosine similarity")
+        # plt.xlabel("retrieved memory")
+        # plt.ylabel("time in recall phase")
+        # plt.tight_layout()
+        # savefig(fig_path/"distances", "state_retrieved_memory.png")
 
 
-        # calculate the distance between the hidden state and the most similar memory
-        distances = np.zeros((timestep_each_phase, timestep_each_phase))
-        for i in range(timestep_each_phase):
-            for j in range(timestep_each_phase):
-                dist = 0.0
-                for k in range(all_context_num):
-                    x = rec_states[k][i] / np.linalg.norm(rec_states[k][i])
-                    y = most_similar_memories[k][j] / np.linalg.norm(most_similar_memories[k][j])
-                    if np.sum(x * y) > 1:
-                        print("strange cosine similarity: ", np.sum(x * y))
-                    dist += np.sum(x * y)
-                distances[i][j] = dist / all_context_num
-        # distances = distances / np.sum(np.abs(distances), axis=-1, keepdims=True)
+        # # calculate the distance between the hidden state and the most similar memory
+        # distances = np.zeros((timestep_each_phase, timestep_each_phase))
+        # for i in range(timestep_each_phase):
+        #     for j in range(timestep_each_phase):
+        #         dist = 0.0
+        #         for k in range(all_context_num):
+        #             x = rec_states[k][i] / np.linalg.norm(rec_states[k][i])
+        #             y = most_similar_memories[k][j] / np.linalg.norm(most_similar_memories[k][j])
+        #             if np.sum(x * y) > 1:
+        #                 print("strange cosine similarity: ", np.sum(x * y))
+        #             dist += np.sum(x * y)
+        #         distances[i][j] = dist / all_context_num
+        # # distances = distances / np.sum(np.abs(distances), axis=-1, keepdims=True)
         
-        plt.figure(figsize=(4.5, 3.7), dpi=180)
-        plt.imshow(distances, cmap="RdBu", vmin=-1, vmax=1)
-        plt.colorbar(label="cosine similarity")
-        plt.xlabel("most similar memory")
-        plt.ylabel("time in response phase")
-        plt.tight_layout()
-        savefig(fig_path/"distances", "state_most_similar_memory.png")
-
-
-
-        """ is there a bias to recall a particular item at a particular time step? """
-        vocabulary_size = env.unwrapped.vocabulary_size
-        recall_num_by_time = np.zeros((timestep_each_phase, vocabulary_size+1))
-        rec_actions = actions[:, -timestep_each_phase:].astype(int)
-        for i in range(context_num):
-            for t in range(timestep_each_phase):
-                recall_num_by_time[t][rec_actions[i][t]] += 1
-        plt.figure(figsize=(0.25*vocabulary_size, 3.7), dpi=180)
-        plt.imshow(recall_num_by_time, cmap="Blues")
-        plt.colorbar(label="recall number")
-        plt.xlabel("memory item")
-        plt.ylabel("time in response phase")
-        plt.tight_layout()
-        savefig(fig_path/"recall_num_by_time", "recall_num_by_time.png")
-
-
-
+        # plt.figure(figsize=(4.5, 3.7), dpi=180)
+        # plt.imshow(distances, cmap="RdBu", vmin=-1, vmax=1)
+        # plt.colorbar(label="cosine similarity")
+        # plt.xlabel("most similar memory")
+        # plt.ylabel("time in recall phase")
+        # plt.tight_layout()
+        # savefig(fig_path/"distances", "state_most_similar_memory.png")

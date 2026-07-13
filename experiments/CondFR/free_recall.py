@@ -3,6 +3,7 @@ import csv
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import sklearn.metrics.pairwise as skp
 from sklearn.linear_model import RidgeClassifier, Ridge, Lasso, LinearRegression
 from sklearn.cluster import KMeans
@@ -17,6 +18,8 @@ from analysis.behavior import RecallProbability, RecallProbabilityInTime, Tempor
 
 def run(data_all, model_all, env, paths, exp_name, checkpoints=None, **kwargs):
     plt.rcParams['font.size'] = 16
+
+    mpl.rcParams['svg.fonttype'] = 'none'
 
     env = env[0]
 
